@@ -26,6 +26,9 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 
 	pushd net-snmp-$(SNMPD_VERSION)
 	git init
+
+	while read -r file; do echo $$file; patch -p1 < ../patches/$$file; done < "../patches/series"
+
 	git add -f *
 	git commit -m "unmodified snmpd source"
 

@@ -1,0 +1,57 @@
+From cce14b28949d5f1fb7f2c7192b70a39178051c10 Mon Sep 17 00:00:00 2001
+From: Guohan Lu <gulv@microsoft.com>
+Date: Sun, 13 Nov 2016 08:20:40 +0000
+Subject: [PATCH] rebase hrProcessorTable index from 0
+
+---
+ agent/mibgroup/host/hr_device.c | 6 +++---
+ agent/mibgroup/host/hr_proc.c   | 2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/agent/mibgroup/host/hr_device.c b/agent/mibgroup/host/hr_device.c
+index 24031bf..a0da597 100644
+--- a/agent/mibgroup/host/hr_device.c
++++ b/agent/mibgroup/host/hr_device.c
+@@ -166,7 +166,7 @@ header_hrdevice(struct variable *vp,
+             break;
+         if (LowType != -1 && LowType < (dev_idx >> HRDEV_TYPE_SHIFT))
+             break;
+-        newname[HRDEV_ENTRY_NAME_LENGTH] = dev_idx;
++        newname[HRDEV_ENTRY_NAME_LENGTH] = dev_idx & HRDEV_TYPE_MASK;
+         DEBUGMSGOID(("host/hr_device", newname, *length));
+         DEBUGMSG(("host/hr_device", "\n"));
+         result = snmp_oid_compare(name, *length, newname, vp->namelen + 1);
+@@ -193,7 +193,7 @@ header_hrdevice(struct variable *vp,
+         return (MATCH_FAILED);
+     }
+ 
+-    newname[HRDEV_ENTRY_NAME_LENGTH] = LowIndex;
++    newname[HRDEV_ENTRY_NAME_LENGTH] = LowIndex & HRDEV_TYPE_MASK;
+     memcpy((char *) name, (char *) newname,
+            ((int) vp->namelen + 1) * sizeof(oid));
+     *length = vp->namelen + 1;
+@@ -241,7 +241,7 @@ really_try_next:
+ 
+     switch (vp->magic) {
+     case HRDEV_INDEX:
+-        long_return = dev_idx;
++        long_return = dev_idx & HRDEV_TYPE_MASK;
+         return (u_char *) & long_return;
+     case HRDEV_TYPE:
+         device_type_id[device_type_len - 1] = type;
+diff --git a/agent/mibgroup/host/hr_proc.c b/agent/mibgroup/host/hr_proc.c
+index 6f93079..be2006d 100644
+--- a/agent/mibgroup/host/hr_proc.c
++++ b/agent/mibgroup/host/hr_proc.c
+@@ -111,7 +111,7 @@ header_hrproc(struct variable *vp,
+         proc_idx = Get_Next_HR_Proc();
+         if (proc_idx == -1)
+             break;
+-        newname[HRPROC_ENTRY_NAME_LENGTH] = proc_idx;
++        newname[HRPROC_ENTRY_NAME_LENGTH] = proc_idx & HRDEV_TYPE_MASK;
+         result = snmp_oid_compare(name, *length, newname, vp->namelen + 1);
+         if (exact && (result == 0)) {
+             LowIndex = proc_idx;
+-- 
+1.9.1
+
