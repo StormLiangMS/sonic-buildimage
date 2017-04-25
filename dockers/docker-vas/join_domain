@@ -1,0 +1,64 @@
+#!/bin/bash
+
+usage_exit() {
+    echo "Usage: join_domain [-e OU_ENVIRONMENT] [-i RETRY_INTERVAL] USERNAME PASSWD"
+    exit 1
+}
+
+OU_ENVIRONMENT=PRODUCTION
+RETRY_INTERVAL=15
+
+while getopts e:i:h OPT
+do
+   case $OPT in
+      e)  OU_ENVIRONMENT=$OPTARG
+          ;;
+      i)  RETRY_INTERVAL=$OPTARG
+          ;;
+      h)  usage_exit
+          ;;
+      \?) usage_exit
+          ;;
+   esac
+done
+shift $((OPTIND - 1))
+
+if [ -z "$2" ]; then
+   usage_exit
+fi
+
+SONIC_ADMIN_DOMAIN=gme.gbl
+SONIC_ADMIN_UID=$1
+SONIC_ADMIN_PASSWD=$2
+
+# Test if joined domain. 
+# Return code: 0 - joined; 10 - not joined; other value - error
+/opt/quest/bin/vastool info domain
+RETCODE=$?
+
+if [ "$RETCODE" -ne "10" ]; then
+   if [ "$RETCODE" -eq "0" ]; then
+      echo "Already joined domain."
+      logger -p info "[vas] Igoring join_domain call as device is already domain-joined."
+      exit 0
+   else 
+      echo "Error while get domain info."
+      logger -p err "[vas] vastool info domain returned unexpected value $RETCODE."
+      exit 2
+   fi
+fi
+
+logger "[vas] Joining PHX.GBL, OU=AZ-PHYNET,RESOURCE,$OU_ENVIRONMENT with account $SONIC_ADMIN_UID@$SONIC_ADMIN_DOMAIN..."
+/opt/quest/bin/vastool -u $SONIC_ADMIN_UID@$SONIC_ADMIN_DOMAIN -w $SONIC_ADMIN_PASSWD join -f -c OU=AZ-PHYNET,OU=RESOURCE,OU=$OU_ENVIRONMENT,DC=phx,DC=gbl -g OU=SecurityGroups,DC=gme,DC=gbl -u CN=Users,DC=gme,DC=gbl\;OU=ServiceAccounts,DC=gme,DC=gbl phx.gbl
+/opt/quest/bin/vastool info domain 
+RETCODE=$?
+
+if [ "$RETCODE" -ne "0" ]; then
+  logger -p warn "[vas] Join domain attemp failed with account $SONIC_ADMIN_UID."
+  exit 1
+fi
+
+logger "[vas] Successfully joined domain."
+
+cp --remove-destination /etc/nsswitch.conf /host/etc/
+

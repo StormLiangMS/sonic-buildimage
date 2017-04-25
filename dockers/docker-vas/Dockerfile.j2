@@ -1,0 +1,46 @@
+FROM docker-config-engine
+
+COPY user-override /etc/opt/quest/vas/user-override
+COPY vas.conf /etc/opt/quest/vas/vas.conf
+COPY start.sh /usr/bin/start.sh
+COPY join_domain /usr/bin/join_domain
+COPY ["*.j2", "/usr/share/sonic/templates/"]
+
+## Make apt-get non-interactive
+ENV DEBIAN_FRONTEND=noninteractive
+
+## Pre-install the fundamental packages
+## Clean up
+RUN apt-get update
+RUN apt-get -y install sudo
+
+COPY \
+{% for deb in docker_vas_debs.split(' ') -%}
+debs/{{ deb }}{{' '}}
+{%- endfor -%}
+debs/
+
+RUN dpkg -i \
+{% for deb in docker_vas_debs.split(' ') -%}
+debs/{{ deb }}{{' '}}
+{%- endfor %}
+
+RUN apt-get clean -y 
+RUN apt-get autoclean -y 
+RUN apt-get autoremove -y
+RUN rm -rf /deps
+
+## Expose to host, ie. image content will copy to host when container started
+## For .so
+VOLUME /host/lib/x86_64-linux-gnu
+## For config
+VOLUME /etc/pam.d/
+VOLUME /host/etc
+## For domain socket and local caches
+VOLUME /var/opt/quest/vas/vasd/
+## For home directory
+VOLUME /home/
+
+ENTRYPOINT ["/bin/bash", "-e"]
+CMD ["/usr/bin/start.sh"]
+
