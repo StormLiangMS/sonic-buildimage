@@ -99,15 +99,23 @@ else
     GRAPH_URL=$src
 fi
 
+CURL_OPTION=""
+if [[ $GRAPH_URL =~ ^https://.*$ ]]; then
+    while [ ! -f /etc/anp/ngs.crt -o ! -f /etc/anp/ngs.key ]; do
+        echo "Waiting for graph service certificate to be pushed..."
+        sleep 5
+    done
+    CURL_OPTION="--cert-type pem --cert /etc/anp/ngs.crt --key /etc/anp/ngs.key"
+fi
+
 if [ -f /etc/sonic/minigraph.xml ]; then
     echo "Renaming minigraph.xml to minigraph.old"
     mv /etc/sonic/minigraph.xml /etc/sonic/minigraph.old
 fi
 
 echo "Getting minigraph from $GRAPH_URL"
-
 while true; do
-    curl -f $GRAPH_URL -o /etc/sonic/minigraph.xml --connect-timeout 15 && break
+    curl $CURL_OPTION -f $GRAPH_URL -o /etc/sonic/minigraph.xml --connect-timeout 15 && break
     sleep 5
 done
 
@@ -117,7 +125,6 @@ if [ -n "$ACL_URL" ]; then
         mv /etc/sonic/acl.json /etc/sonic/acl.json.old
     fi
     echo "Getting ACL config from $ACL_URL"
-
     while true; do
         curl -f $ACL_URL -o /etc/sonic/acl.json --connect-timeout 15 && break
         sleep 5
