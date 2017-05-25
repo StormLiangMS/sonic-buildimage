@@ -99,6 +99,7 @@ index 58c89fe..f438ab3 100644
  config-dell-s6000.patch
  config-mlnx-sn2700.patch
  config-dell-z9100.patch
+ config-ingrasys-s9100.patch
 +config-cisco-n3132-gx.patch
  driver-at24-fix-odd-length-two-byte-access.patch
 +driver-hwmon-adt7462-fix-alarm-mask.patch
