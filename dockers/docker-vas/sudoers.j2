@@ -33,6 +33,9 @@ root    ALL=(ALL:ALL) ALL
 {% for netgroup in rw_netgroups %}
 %{{ netgroup }} ALL=(ALL:ALL) NOPASSWD: ALL
 {% endfor %}
+{% if DEVICE_METADATA and DEVICE_METADATA['localhost'].has_key('deployment_id') %}
+{% set deployment_id = DEVICE_METADATA['localhost']['deployment_id'] %}
+{% endif %}
 {% if deployment_id | int == 1 or deployment_id | int == 3 %}
 {% for netgroup in rw_netgroups_ap %}
 %{{ netgroup }} ALL=(ALL:ALL) NOPASSWD: ALL
