@@ -106,6 +106,7 @@ index 58c89fe..f438ab3 100644
  driver-hwmon-max6620.patch
  driver-hwmon-max6620-fix-rpm-calc.patch
  driver-hwmon-max6620-update.patch
+ driver-hwmon-lm75b-update.patch
 +driver-hwmon-pmbus-cisco_n2200.patch
 +driver-hwmon-pmbus-cisco_n2200-update.patch
  driver-hwmon-pmbus-dni_dps460.patch
