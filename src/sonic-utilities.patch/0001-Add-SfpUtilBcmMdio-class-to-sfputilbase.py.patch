@@ -1,0 +1,195 @@
+From e6935c49b280f436dba60cdcfbe07cd20523455e Mon Sep 17 00:00:00 2001
+From: Joe LeVeque <jolevequ@microsoft.com>
+Date: Fri, 1 Sep 2017 21:29:16 +0000
+Subject: [PATCH] Add SfpUtilBcmMdio class to sfputilbase.py
+
+---
+ sonic_sfp/sfputilbase.py | 175 +++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 175 insertions(+)
+
+diff --git a/sonic_sfp/sfputilbase.py b/sonic_sfp/sfputilbase.py
+index d8e522b..b67a442 100644
+--- a/sonic_sfp/sfputilbase.py
++++ b/sonic_sfp/sfputilbase.py
+@@ -606,3 +606,178 @@ class SfpUtilBase(object):
+         :returns: Boolean, True if reset successful, False if not
+         """
+         return
++
++
++class SfpUtilBcmMdio(SfpUtilBase):
++    """Provides SFP+/QSFP EEPROM access via BCM MDIO methods"""
++
++    __metaclass__ = abc.ABCMeta
++
++    IDENTITY_EEPROM_ADDR = 0xa000
++    DOM_EEPROM_ADDR = 0xa200
++
++    # Register Offsets and Constants
++    EEPROM_ADDR = 0x8007
++    TWOWIRE_CONTROL_REG = 0x8000
++    TWOWIRE_CONTROL_ENABLE_MASK = 0x8000
++    TWOWIRE_CONTROL_READ_CMD_MASK = 0x0002
++    TWOWIRE_CONTROL_CMD_STATUS_MASK = 0xc
++    TWOWIRE_CONTROL_CMD_STATUS_IDLE = 0x0
++    TWOWIRE_CONTROL_CMD_STATUS_SUCCESS = 0x4
++    TWOWIRE_CONTROL_CMD_STATUS_BUSY = 0x8
++    TWOWIRE_CONTROL_CMD_STATUS_FAILED = 0xc
++
++    TWOWIRE_INTERNAL_ADDR_REG = 0x8004
++    TWOWIRE_INTERNAL_ADDR_REGVAL = EEPROM_ADDR
++
++    TWOWIRE_TRANSFER_SIZE_REG = 0x8002
++
++    TWOWIRE_TRANSFER_SLAVEID_ADDR_REG = 0x8005
++
++    # bcmcmd handle
++    bcm = None
++
++    # With BCM MDIO, we do not use port_to_eeprom_mapping
++    @property
++    def port_to_eeprom_mapping(self):
++        return None
++
++    def __init__(self):
++        try:
++            self.bcm = bcmshell.bcmshell()
++        except:
++            raise RuntimeError("unable to obtain exclusive access to hardware")
++
++        SfpUtilBase.__init__(self)
++
++    def _read_eeprom_devid(self, port_num, devid, offset):
++        if port_num in self.qsfp_ports:
++            # Get QSFP page 0 and page 1 eeprom
++            # XXX: Need to have a way to select page 2,3,4 for dom eeprom
++            eeprom_raw_1 = self._read_eeprom_devid_page_size(port_num, devid, 0, 128, offset)
++            eeprom_raw_2 = self._read_eeprom_devid_page_size(port_num, devid, 1, 128, offset)
++            if eeprom_raw_1 is None or eeprom_raw_2 is None:
++                return None
++            return eeprom_raw_1 + eeprom_raw_2
++        else:
++            # Read 256 bytes of data from specified devid
++            return self._read_eeprom_devid_page_size(port_num, devid, 0, 256, offset)
++
++    def _read_eeprom_devid_page_size(self, port_num, devid, page, size, offset):
++        """
++        Read data from specified devid using the bcmshell's 'phy' command..
++
++        Use port_num to identify which EEPROM to read.
++        """
++
++        TWOWIRE_TRANSFER_SLAVEID_ADDR = 0x0001 | devid | page << 8
++
++        eeprom_raw = None
++        num_bytes = size
++        phy_addr = None
++        bcm_port = None
++
++        ganged_40_by_4 = self.is_physical_port_ganged_40_by_4(port_num)
++        if ganged_40_by_4 == 1:
++            # In 40G/4 gang mode, the port is by default configured in
++            # single mode. To read the individual sfp details, the port
++            # needs to be in quad mode. Set the port mode to quad mode
++            # for the duration of this function. Switch it back to
++            # original state after we are done
++            logical_port = self.get_physical_to_logical(port_num)
++            gang_phyid = self.get_40_by_4_gangport_phyid(logical_port[0])
++
++            # Set the gang port to quad mode
++            chip_mode_reg = 0xc805
++            chip_mode_mask = 0x1
++
++            # bcmcmd phy raw c45 <phyid> <device> <mode_reg_addr> <mode_mask>
++            # Ex: bcmcmd phy raw c45 0x4 1 0xc805 0x0070
++            gang_chip_mode_orig = self._phy_reg_get(gang_phyid, None, chip_mode_reg)
++            quad_mode_mask = gang_chip_mode_orig & ~(chip_mode_mask)
++            self._phy_reg_set(gang_phyid, None, chip_mode_reg, quad_mode_mask)
++
++            phy_addr = self.get_physical_port_phyid(port_num)[0]
++
++        if phy_addr is None:
++            bcm_port = self._get_bcm_port(port_num)
++
++        # Enable 2 wire master
++        regval = self._phy_reg_get(phy_addr, bcm_port, self.TWOWIRE_CONTROL_REG)
++        regval = regval | self.TWOWIRE_CONTROL_ENABLE_MASK
++        self._phy_reg_set(phy_addr, bcm_port, self.TWOWIRE_CONTROL_REG, regval)
++
++        # Set 2wire internal addr reg
++        self._phy_reg_set(phy_addr, bcm_port,
++                          self.TWOWIRE_INTERNAL_ADDR_REG,
++                          self.TWOWIRE_INTERNAL_ADDR_REGVAL)
++
++        # Set transfer count
++        self._phy_reg_set(phy_addr, bcm_port,
++                          self.TWOWIRE_TRANSFER_SIZE_REG, size)
++
++        # Set eeprom dev id
++        self._phy_reg_set(phy_addr, bcm_port,
++                          self.TWOWIRE_TRANSFER_SLAVEID_ADDR_REG,
++                          TWOWIRE_TRANSFER_SLAVEID_ADDR)
++
++        # Initiate read
++        regval = self._phy_reg_get(phy_addr, bcm_port, self.TWOWIRE_CONTROL_REG)
++        regval = regval | self.TWOWIRE_CONTROL_READ_CMD_MASK
++        self._phy_reg_set(phy_addr, bcm_port, self.TWOWIRE_CONTROL_REG, regval)
++
++        # Read command status
++        regval = self._phy_reg_get(phy_addr, bcm_port, self.TWOWIRE_CONTROL_REG)
++        cmd_status = regval & self.TWOWIRE_CONTROL_CMD_STATUS_MASK
++
++        # poll while command busy
++        poll_count = 0
++        while cmd_status == self.TWOWIRE_CONTROL_CMD_STATUS_BUSY:
++            regval = self._phy_reg_get(phy_addr, bcm_port, self.TWOWIRE_CONTROL_REG)
++            cmd_status = regval & self.TWOWIRE_CONTROL_CMD_STATUS_MASK
++            poll_count += 1
++            if poll_count > 500:
++                raise RuntimeError("Timeout waiting for two-wire transaction completion")
++
++        if cmd_status == self.TWOWIRE_CONTROL_CMD_STATUS_SUCCESS:
++            # Initialize return buffer
++            eeprom_raw = []
++            for i in range(0, num_bytes):
++                eeprom_raw.append("0x00")
++
++            # Read into return buffer
++            for i in range(0, num_bytes):
++                addr = self.EEPROM_ADDR + i
++                out = self._phy_reg_get(phy_addr, bcm_port, addr)
++                eeprom_raw[i] = hex(out)[2:].zfill(2)
++
++        if ganged_40_by_4 == 1:
++            # Restore original ganging mode
++            self._phy_reg_set(gang_phyid, bcm_port,
++                              chip_mode_reg, gang_chip_mode_orig)
++
++        return eeprom_raw
++
++    def _phy_reg_get(self, phy_addr, bcm_port, regaddr):
++        if phy_addr is not None:
++            cmd = "phy raw c45 %s 1 0x%x" % (phy_addr, regaddr)
++        else:
++            cmd = "phy %s 0x%x 1" % (bcm_port, regaddr)
++
++        try:
++            out = self.bcm.run(cmd)
++        except:
++            raise RuntimeError("Error getting access to hardware - bcm cmd '%s' failed" % cmd)
++
++        return int(out.split().pop(), 16)
++
++    def _phy_reg_set(self, phy_addr, bcm_port, regaddr, regval):
++        if phy_addr is not None:
++            cmd = "phy raw c45 %s 1 0x%x 0x%x" % (phy_addr, regaddr, regval)
++        else:
++            cmd = "phy %s 0x%x 1 0x%x" % (bcm_port, regaddr, regval)
++
++        try:
++            return self.bcm.run(cmd)
++        except:
++            raise RuntimeError("Error getting access to hardware - bcm cmd '%s' failed" % cmd)
+-- 
+1.9.1
+
