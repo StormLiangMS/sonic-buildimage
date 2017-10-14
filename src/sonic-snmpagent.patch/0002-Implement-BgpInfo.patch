@@ -1,4 +1,4 @@
-From e9e0b25d3185e6748a0dac978962db02727fd1d9 Mon Sep 17 00:00:00 2001
+From 542cb9a34cb5ae4c32e91bf1273d3aed850b803b Mon Sep 17 00:00:00 2001
 From: Qi Luo <qiluo-msft@users.noreply.github.com>
 Date: Sat, 26 Aug 2017 01:55:52 +0000
 Subject: [PATCH] Implement BgpInfo
@@ -6,22 +6,22 @@ Subject: [PATCH] Implement BgpInfo
 ---
  __init__.py                                     |   0
  src/sonic_ax_impl/lib/__init__.py               |   0
- src/sonic_ax_impl/lib/vtysh_helper.py           | 119 ++++++++++++++++++++++++
+ src/sonic_ax_impl/lib/vtysh_helper.py           | 128 ++++++++++++++++++++++++
  src/sonic_ax_impl/main.py                       |   1 +
  src/sonic_ax_impl/mibs/vendor/cisco/__init__.py |   2 +-
- src/sonic_ax_impl/mibs/vendor/cisco/bgp4.py     |  44 +++++++++
+ src/sonic_ax_impl/mibs/vendor/cisco/bgp4.py     |  44 ++++++++
  tests/__init__.py                               |   1 +
  tests/mock_tables/bgpsummary_ipv4.txt           |  35 +++++++
- tests/mock_tables/bgpsummary_ipv6_empty.txt     |  29 ++++++
- tests/mock_tables/socket.py                     |  47 ++++++++++
- tests/test_vtysh.py                             | 100 ++++++++++++++++++++
- 11 files changed, 377 insertions(+), 1 deletion(-)
+ tests/mock_tables/bgpsummary_ipv6.txt           |  31 ++++++
+ tests/mock_tables/socket.py                     |  47 +++++++++
+ tests/test_vtysh.py                             | 100 ++++++++++++++++++
+ 11 files changed, 388 insertions(+), 1 deletion(-)
  create mode 100644 __init__.py
  create mode 100644 src/sonic_ax_impl/lib/__init__.py
  create mode 100644 src/sonic_ax_impl/lib/vtysh_helper.py
  create mode 100644 src/sonic_ax_impl/mibs/vendor/cisco/bgp4.py
  create mode 100644 tests/mock_tables/bgpsummary_ipv4.txt
- create mode 100644 tests/mock_tables/bgpsummary_ipv6_empty.txt
+ create mode 100644 tests/mock_tables/bgpsummary_ipv6.txt
  create mode 100644 tests/mock_tables/socket.py
  create mode 100644 tests/test_vtysh.py
 
@@ -33,10 +33,10 @@ new file mode 100644
 index 0000000..e69de29
 diff --git a/src/sonic_ax_impl/lib/vtysh_helper.py b/src/sonic_ax_impl/lib/vtysh_helper.py
 new file mode 100644
-index 0000000..ae87052
+index 0000000..d3a8ca6
 --- /dev/null
 +++ b/src/sonic_ax_impl/lib/vtysh_helper.py
-@@ -0,0 +1,119 @@
+@@ -0,0 +1,128 @@
 +import re
 +import ipaddress
 +import socket
@@ -60,7 +60,6 @@ index 0000000..ae87052
 +
 +def vtysh_run(command):
 +    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-+    print(s)
 +    s.connect((HOST, PORT))
 +
 +    cmd = b"zebra\r\n" + command.encode() + b"\r\nexit\r\n"
@@ -114,6 +113,16 @@ index 0000000..ae87052
 +        l = ls[li]
 +        li += 1
 +        if l == '': break
++
++        ## Handle line wrap
++        ## ref: bgp_show_summary in https://github.com/Azure/sonic-quagga/blob/debian/0.99.24.1/bgpd/bgp_vty.c
++        if ' ' not in l:
++            ## Read next line
++            if li >= n:
++                raise ValueError('Unexpected line wrap')
++            l += ls[li]
++            li += 1
++
 +        ## Note: State/PfxRcd field may be 'Idle (Admin)'
 +        lt = re.split('\s+', l.rstrip(), maxsplit = hn - 1)
 +        if len(lt) != hn:
@@ -273,12 +282,12 @@ index 0000000..44f8b69
 +str-msn2700-05> exit
 +
 +
-diff --git a/tests/mock_tables/bgpsummary_ipv6_empty.txt b/tests/mock_tables/bgpsummary_ipv6_empty.txt
+diff --git a/tests/mock_tables/bgpsummary_ipv6.txt b/tests/mock_tables/bgpsummary_ipv6.txt
 new file mode 100644
-index 0000000..2e7bfe4
+index 0000000..318f3db
 --- /dev/null
-+++ b/tests/mock_tables/bgpsummary_ipv6_empty.txt
-@@ -0,0 +1,29 @@
++++ b/tests/mock_tables/bgpsummary_ipv6.txt
+@@ -0,0 +1,31 @@
 +
 +Hello, this is Quagga (version 0.99.24.1).
 +Copyright 1996-2005 Kunihiro Ishiguro, et al.
@@ -290,7 +299,7 @@ index 0000000..2e7bfe4
 +str-msn2700-05>
 +BGP router identifier 10.1.0.32, local AS number 65100
 +RIB entries 13025, using 1425 KiB of memory
-+Peers 16, using 291 KiB of memory
++Peers 11, using 291 KiB of memory
 +
 +Neighbor        V         AS MsgRcvd MsgSent   TblVer  InQ OutQ Up/Down  State/PfxRcd
 +fc00::72        4 64600    3253    3255        0    0    0 00:48:54 Idle (Admin)
@@ -303,14 +312,16 @@ index 0000000..2e7bfe4
 +fc00::8         4 65200    6608    6790        0    0    0 13:21:22 OpenConfirm
 +fc00::10        4 65200    6608    6790        0    0    0 13:21:22 Clearing
 +fc00::12        4 65200    6608    6790        0    0    0 13:21:22 Deleted
++2603:10b0:2800:cc1::2e
++                4 64611    2919      92        0    0    0 01:18:59        0
 +
-+Total number of neighbors 15
++Total number of neighbors 11
 +str-msn2700-05>
 +str-msn2700-05> exit
 +
 diff --git a/tests/mock_tables/socket.py b/tests/mock_tables/socket.py
 new file mode 100644
-index 0000000..bd58d7b
+index 0000000..86d6f02
 --- /dev/null
 +++ b/tests/mock_tables/socket.py
 @@ -0,0 +1,47 @@
@@ -351,7 +362,7 @@ index 0000000..bd58d7b
 +        if MockSocket._instance_count == 1:
 +            filename = INPUT_DIR + '/bgpsummary_ipv4.txt'
 +        elif MockSocket._instance_count == 2:
-+            filename = INPUT_DIR + '/bgpsummary_ipv6_empty.txt'
++            filename = INPUT_DIR + '/bgpsummary_ipv6.txt'
 +
 +        ret = namedtuple('ret', ['returncode', 'stdout'])
 +        ret.returncode = 0
