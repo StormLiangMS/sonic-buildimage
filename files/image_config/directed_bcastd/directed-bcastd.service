@@ -1,0 +1,11 @@
+[Unit]
+Description=Directed broadcast forwarding daemon
+After=dhcp_relay.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/directed_bcastd.sh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
