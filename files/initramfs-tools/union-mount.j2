@@ -22,6 +22,8 @@ set_tmpfs_log_partition_size()
   [ X"$aboot_platform" = X"x86_64-arista_7050_qx32s"  ] && return
   [ X"$aboot_platform" = X"x86_64-arista_7060_cx32s"  ] && return
   [ X"$aboot_platform" = X"x86_64-arista_7060cx2_32s"  ] && return
+  [ X"$onie_platform"  = X"x86_64-m3000-r0"  ]         && return
+  [ X"$onie_platform"  = X"x86_64-m3000-r1"  ]         && return
 
   # set varlogsize to existing var-log.ext4 size
   if [ -f ${rootmnt}/host/disk-img/var-log.ext4 ]; then
@@ -71,7 +73,9 @@ fi
 
 if [ X"$aboot_platform" = X"x86_64-arista_7050_qx32"  ] ||
    [ X"$aboot_platform" = X"x86_64-arista_7050_qx32s" ] ||
-   [ X"$aboot_platform" = X"x86_64-arista_7060_cx32s" ]
+   [ X"$aboot_platform" = X"x86_64-arista_7060_cx32s" ] ||
+   [ X"$onie_platform"  = X"x86_64-m3000-r0" ]          ||
+   [ X"$onie_platform"  = X"x86_64-m3000-r1" ] 
 then
   set_tmpfs_log_partition_size
   mount -t tmpfs -o rw,nosuid,nodev,size=${varlogsize}M tmpfs ${rootmnt}/var/log
