@@ -512,6 +512,9 @@ sudo LANG=C chroot $FILESYSTEM_ROOT bash -c 'rm -rf /usr/share/doc/* /usr/share/
 ## Clean up proxy
 [ -n "$http_proxy" ] && sudo rm -f $FILESYSTEM_ROOT/etc/apt/apt.conf.d/01proxy
 
+# Set DNS server
+sudo bash -c "echo 'nameserver 10.64.5.5' > $FILESYSTEM_ROOT/etc/resolv.conf"
+
 ## Umount all
 echo '[INFO] Umount all'
 ## Display all process details access /proc
