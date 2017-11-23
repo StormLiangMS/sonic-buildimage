@@ -1,2 +1,3 @@
 0001-Add-SfpUtilBcmMdio-class-to-sfputilbase.py.patch
 0002-Restart-vas-when-reload-minigraph.patch
+0003-Stopping-all-BGP-SLB-neighbors-if-they-re-presented-.patch

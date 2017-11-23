@@ -1,0 +1,36 @@
+From 26cf230be69b144bbfaf40a1ca6fd377c154c344 Mon Sep 17 00:00:00 2001
+From: Pavel Shirshov <pavelsh@microsoft.com>
+Date: Wed, 22 Nov 2017 20:46:03 +0000
+Subject: [PATCH] Stopping all BGP SLB neighbors if they're presented before
+ FastReboot procedure
+
+---
+ scripts/fast-reboot | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/scripts/fast-reboot b/scripts/fast-reboot
+index 21d153e..5d1c6db 100755
+--- a/scripts/fast-reboot
++++ b/scripts/fast-reboot
+@@ -7,6 +7,18 @@ then
+   exit
+ fi
+ 
++# Stopping all SLB neighbors if they're presented
++PASSIVE_BGP_NEIGHBORS=$(sonic-cfggen -m /etc/sonic/minigraph.xml -v "BGP_PEER_RANGE | list")
++case "$PASSIVE_BGP_NEIGHBORS" in
++  *BGPSLBPassive*)
++    ASN=$(sonic-cfggen -m /etc/sonic/minigraph.xml -v "DEVICE_METADATA['localhost']['bgp_asn']")
++    SLBNAME=$(sonic-cfggen -m /etc/sonic/minigraph.xml -v "BGP_PEER_RANGE['BGPSLBPassive']['name']")
++    vtysh -e "configure terminal" -e "router bgp ${ASN}" -e "neighbor ${SLBNAME} shutdown"
++    sleep 1
++    ;;
++  *)
++    ;;
++esac
+ 
+ # Unload the previously loaded kernel if any loaded
+ if [ "$(cat /sys/kernel/kexec_loaded)" -eq 1 ]
+-- 
+2.14.1
+
