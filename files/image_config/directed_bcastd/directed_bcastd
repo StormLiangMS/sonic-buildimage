@@ -145,6 +145,7 @@ class DirectedBroadcaster(object):
         self._vlan_bcast_to_iface_dict = {}
         self._uplink_fd_to_iface_dict = {}
         self._iface_update_timer_secs = 0
+        self._update_ifaces = True
         self._last_fwd_pkt_count_reset = datetime.datetime.min
         self._fwd_pkt_count = 0
         self._last_rate_exceeded_msg_logged = datetime.datetime.min
@@ -286,7 +287,7 @@ class DirectedBroadcaster(object):
         while True:
             # If our interface update timer has expired, update our view of the
             # interfaces and reset the timer
-            if self._iface_update_timer_secs <= 0:
+            if self._update_ifaces == True:
                 self.update_vlan_bcast_to_iface_dict()
                 self.update_uplink_fd_to_iface_dict()
                 self._iface_update_timer_secs = self.IFACE_UPDATE_INTERVAL_SECS
@@ -298,6 +299,7 @@ class DirectedBroadcaster(object):
                 time.sleep(5)
                 continue
 
+            self._update_ifaces = False
             select_start_time = datetime.datetime.now()
 
             # Listen for incoming packets on our uplink interfaces
@@ -309,6 +311,8 @@ class DirectedBroadcaster(object):
             # Update our timer accordingly
             select_elapsed_secs = (datetime.datetime.now() - select_start_time).total_seconds()
             self._iface_update_timer_secs -= select_elapsed_secs
+            if self._iface_update_timer_secs <= 0:
+                self._update_ifaces = True
 
             # Receive packets on all fd's that are ready for reading, and attempt
             # to forward any directed broadcasts
@@ -363,7 +367,7 @@ def get_iface_dict_from_config(iface_table_name):
     try:
         iface_dict = ast.literal_eval(stdout)
     except (ValueError, SyntaxError) as err:
-        log_error("get_iface_dict_from_config(): "
+        log_info("get_iface_dict_from_config(): "
                   "Failed to create iface_dict (%s)" % str(err))
         return {}
 
