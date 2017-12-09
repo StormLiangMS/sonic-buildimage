@@ -89,10 +89,10 @@ index 0000000..7038bea
 +../../sonic-linux-kernel.patch/patch/driver-rtc-cmos-address-space-256.patch
 \ No newline at end of file
 diff --git a/patch/series b/patch/series
-index 58c89fe..f438ab3 100644
+index fee5fe1..d24d1cd 100644
 --- a/patch/series
 +++ b/patch/series
-@@ -1,15 +1,23 @@
+@@ -1,18 +1,26 @@
  # This series applies on GIT commit 1451b36b2b0d62178e42f648d8a18131af18f7d8
  kernel-sched-core-fix-cgroup-fork-race.patch
 +arch-nr-512-gpio.patch
@@ -100,6 +100,7 @@ index 58c89fe..f438ab3 100644
  config-mlnx-sn2700.patch
  config-dell-z9100.patch
  config-ingrasys-s9100.patch
+ config-arista-7060-cx32s.patch
 +config-cisco-n3132-gx.patch
  driver-at24-fix-odd-length-two-byte-access.patch
 +driver-hwmon-adt7462-fix-alarm-mask.patch
