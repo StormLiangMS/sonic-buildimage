@@ -146,6 +146,8 @@ index 0000000..d3a8ca6
 +    ver = dic['V']
 +    sta = dic['State/PfxRcd']
 +
++    # prefix '*' appears if the entry is a dynamic neighbor
++    nei = nei[1:] if nei[0] == '*' else nei
 +    ip = ipaddress.ip_address(nei)
 +    if type(ip) is ipaddress.IPv4Address:
 +        oid_head = (1, 4)
