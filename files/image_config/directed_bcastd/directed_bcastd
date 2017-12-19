@@ -364,10 +364,15 @@ def get_iface_dict_from_config(iface_table_name):
                   "Failed to call sonic-cfggen (%s)" % str(err))
         return {}
 
+    # If the call to sonic-cfggen returned no text, there must be no interfaces
+    # in this table (thus no interfaces of this type)
+    if not stdout:
+        return {}
+
     try:
         iface_dict = ast.literal_eval(stdout)
     except (ValueError, SyntaxError) as err:
-        log_info("get_iface_dict_from_config(): "
+        log_error("get_iface_dict_from_config(): "
                   "Failed to create iface_dict (%s)" % str(err))
         return {}
 
