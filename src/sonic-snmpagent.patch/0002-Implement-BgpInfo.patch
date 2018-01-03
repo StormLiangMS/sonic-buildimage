@@ -196,7 +196,7 @@ index 0000000..4f4fa0a
 +from bisect import bisect_right
 +from sonic_ax_impl import mibs
 +from sonic_ax_impl.lib import vtysh_helper
-+from ax_interface import MIBMeta, ValueType, MIBUpdater, ContextualMIBEntry, SubtreeMIBEntry
++from ax_interface import MIBMeta, ValueType, MIBUpdater, SubtreeMIBEntry
 +from ax_interface.mib import MIBEntry
 +
 +class BgpSessionUpdater(MIBUpdater):
