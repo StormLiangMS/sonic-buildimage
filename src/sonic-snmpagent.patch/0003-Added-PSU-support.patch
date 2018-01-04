@@ -1,4 +1,4 @@
-From f80e0dedc7d2d7cbe9a75b189d827838d9d3599b Mon Sep 17 00:00:00 2001
+From 6d6806527a679ef5890740465e9f7f7bea3465cf Mon Sep 17 00:00:00 2001
 From: andrii savka <andriis@mellanox.com>
 Date: Mon, 20 Nov 2017 17:22:02 +0200
 Subject: [PATCH] Added PSU support
@@ -6,12 +6,12 @@ Subject: [PATCH] Added PSU support
 ---
  src/sonic_ax_impl/main.py                          |   1 +
  src/sonic_ax_impl/mibs/vendor/cisco/__init__.py    |   1 +
- .../mibs/vendor/cisco/ciscoEntityFruControlMIB.py  |  97 ++++++++++++++++++++
+ .../mibs/vendor/cisco/ciscoEntityFruControlMIB.py  | 102 +++++++++++++++++++++
  tests/__init__.py                                  |   1 +
  tests/mock_tables/imp.py                           |  15 +++
  tests/plugins/psuutil.py                           |  58 ++++++++++++
- tests/test_psu.py                                  | 101 +++++++++++++++++++++
- 7 files changed, 274 insertions(+)
+ tests/test_psu.py                                  | 101 ++++++++++++++++++++
+ 7 files changed, 279 insertions(+)
  create mode 100644 src/sonic_ax_impl/mibs/vendor/cisco/ciscoEntityFruControlMIB.py
  create mode 100644 tests/mock_tables/imp.py
  create mode 100644 tests/plugins/psuutil.py
@@ -38,10 +38,10 @@ index d77c3ad..04a4015 100644
 +from . import ciscoEntityFruControlMIB
 diff --git a/src/sonic_ax_impl/mibs/vendor/cisco/ciscoEntityFruControlMIB.py b/src/sonic_ax_impl/mibs/vendor/cisco/ciscoEntityFruControlMIB.py
 new file mode 100644
-index 0000000..1b7e938
+index 0000000..c61a95f
 --- /dev/null
 +++ b/src/sonic_ax_impl/mibs/vendor/cisco/ciscoEntityFruControlMIB.py
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,102 @@
 +import imp
 +import re
 +import sys
@@ -344,5 +344,5 @@ index 0000000..9923efd
 +        self.assertEqual(str(value0.name), str(oid))
 +        self.assertEqual(value0.data, None)
 -- 
-2.11.0
+2.1.4
 
