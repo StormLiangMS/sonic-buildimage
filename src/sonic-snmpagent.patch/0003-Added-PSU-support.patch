@@ -1,4 +1,4 @@
-From 6d6806527a679ef5890740465e9f7f7bea3465cf Mon Sep 17 00:00:00 2001
+From 0ce71650a80f9b8c22545963d38ea1a70fa0164f Mon Sep 17 00:00:00 2001
 From: andrii savka <andriis@mellanox.com>
 Date: Mon, 20 Nov 2017 17:22:02 +0200
 Subject: [PATCH] Added PSU support
@@ -18,10 +18,10 @@ Subject: [PATCH] Added PSU support
  create mode 100644 tests/test_psu.py
 
 diff --git a/src/sonic_ax_impl/main.py b/src/sonic_ax_impl/main.py
-index f75af56..eb9acbf 100644
+index d5fff61..7aec24b 100644
 --- a/src/sonic_ax_impl/main.py
 +++ b/src/sonic_ax_impl/main.py
-@@ -32,6 +32,7 @@ class SonicMIB(
+@@ -33,6 +33,7 @@ class SonicMIB(
      dell.force10.SSeriesMIB,
      cisco.mgmt.CiscoSystemExtMIB,
      cisco.bgp4.CiscoBgp4MIB,
@@ -344,5 +344,5 @@ index 0000000..9923efd
 +        self.assertEqual(str(value0.name), str(oid))
 +        self.assertEqual(value0.data, None)
 -- 
-2.1.4
+2.11.0
 

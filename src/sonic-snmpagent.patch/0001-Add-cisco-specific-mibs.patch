@@ -1,4 +1,4 @@
-From 145ebf619195c2ffff619d031a3c05c92004d5a6 Mon Sep 17 00:00:00 2001
+From 90be7cdc66ecfb024f71740656c5ba647736ab09 Mon Sep 17 00:00:00 2001
 From: Qi Luo <qiluo-msft@users.noreply.github.com>
 Date: Wed, 15 Mar 2017 21:42:10 +0000
 Subject: [PATCH] Add cisco specific mibs
@@ -12,19 +12,19 @@ Subject: [PATCH] Add cisco specific mibs
  create mode 100644 src/sonic_ax_impl/mibs/vendor/cisco/mgmt.py
 
 diff --git a/src/sonic_ax_impl/main.py b/src/sonic_ax_impl/main.py
-index 2309860..26a46e4 100644
+index 7701e3d..0c9df40 100644
 --- a/src/sonic_ax_impl/main.py
 +++ b/src/sonic_ax_impl/main.py
 @@ -12,7 +12,7 @@ import ax_interface
  from sonic_ax_impl.mibs import ieee802_1ab
  from . import logger
- from .mibs.ietf import rfc1213, rfc2863, rfc4292, rfc4363
+ from .mibs.ietf import rfc1213, rfc2737, rfc2863, rfc4292, rfc4363
 -from .mibs.vendor import dell
 +from .mibs.vendor import dell, cisco
  
  # Background task update frequency ( in seconds )
  DEFAULT_UPDATE_FREQUENCY = 5
-@@ -29,6 +29,7 @@ class SonicMIB(
+@@ -31,6 +31,7 @@ class SonicMIB(
      ieee802_1ab.LLDPLocPortTable,
      ieee802_1ab.LLDPRemTable,
      dell.force10.SSeriesMIB,
