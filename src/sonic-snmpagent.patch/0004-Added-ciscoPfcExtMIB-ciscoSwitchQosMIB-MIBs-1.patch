@@ -1,18 +1,33 @@
-From c954e4e44d1e44fc5b4b2269a5bbcee63aeb07c7 Mon Sep 17 00:00:00 2001
-From: AndriiS <andriis@mellanox.com>
-Date: Thu, 11 Jan 2018 21:51:35 +0200
-Subject: [PATCH] Added ciscoPfcExtMIB, ciscoSwitchQosMIB MIBs (#1)
+From e84d1d89b8925cb547dfd435a5c1e8b58c74dedc Mon Sep 17 00:00:00 2001
+From: Qi Luo <qiluo-msft@users.noreply.github.com>
+Date: Tue, 23 Jan 2018 23:59:51 +0000
+Subject: [PATCH] Added ciscoPfcExtMIB, ciscoSwitchQosMIB MIBs
 
+Squashed commit of the following:
+
+commit f0cbfff09066e372c1fe99983692a1dd719e5e80
+Author: Qi Luo <qiluo-msft@users.noreply.github.com>
+Date:   Tue Jan 23 23:20:02 2018 +0000
+
+    Fix Pfc/Qos counter integer range
+
+    Signed-off-by: Qi Luo <qiluo-msft@users.noreply.github.com>
+
+commit c954e4e44d1e44fc5b4b2269a5bbcee63aeb07c7
+Author: AndriiS <andriis@mellanox.com>
+Date:   Thu Jan 11 21:51:35 2018 +0200
+
+    Added ciscoPfcExtMIB, ciscoSwitchQosMIB MIBs (#1)
 ---
  src/sonic_ax_impl/main.py                          |   3 +
  src/sonic_ax_impl/mibs/__init__.py                 |  66 ++
  src/sonic_ax_impl/mibs/vendor/cisco/__init__.py    |   2 +
  .../mibs/vendor/cisco/ciscoPfcExtMIB.py            | 275 +++++++
- .../mibs/vendor/cisco/ciscoSwitchQosMIB.py         | 213 +++++
+ .../mibs/vendor/cisco/ciscoSwitchQosMIB.py         | 216 +++++
  tests/mock_tables/counters_db.json                 | 884 ++++++++++++++++++++-
  tests/test_pfc.py                                  | 205 +++++
  tests/test_queues_stat.py                          | 110 +++
- 8 files changed, 1726 insertions(+), 32 deletions(-)
+ 8 files changed, 1729 insertions(+), 32 deletions(-)
  create mode 100644 src/sonic_ax_impl/mibs/vendor/cisco/ciscoPfcExtMIB.py
  create mode 100644 src/sonic_ax_impl/mibs/vendor/cisco/ciscoSwitchQosMIB.py
  create mode 100644 tests/test_pfc.py
@@ -131,7 +146,7 @@ index 04a4015..e295a87 100644
  from . import ciscoEntityFruControlMIB
 diff --git a/src/sonic_ax_impl/mibs/vendor/cisco/ciscoPfcExtMIB.py b/src/sonic_ax_impl/mibs/vendor/cisco/ciscoPfcExtMIB.py
 new file mode 100644
-index 0000000..7fa8d94
+index 0000000..0600c55
 --- /dev/null
 +++ b/src/sonic_ax_impl/mibs/vendor/cisco/ciscoPfcExtMIB.py
 @@ -0,0 +1,275 @@
@@ -231,7 +246,7 @@ index 0000000..7fa8d94
 +
 +        try:
 +            counter_value = self.if_counters[sai_id][_counter_name]
-+            counter_value = int(counter_value)
++            counter_value = int(counter_value) & 0x00000000ffffffff
 +            # done!
 +            return counter_value
 +        except KeyError as e:
@@ -412,10 +427,10 @@ index 0000000..7fa8d94
 +        SubtreeMIBEntry('1.3', pfc_updater, ValueType.INTEGER, pfc_updater.indications_per_priority)
 diff --git a/src/sonic_ax_impl/mibs/vendor/cisco/ciscoSwitchQosMIB.py b/src/sonic_ax_impl/mibs/vendor/cisco/ciscoSwitchQosMIB.py
 new file mode 100644
-index 0000000..bf1f13b
+index 0000000..b1db234
 --- /dev/null
 +++ b/src/sonic_ax_impl/mibs/vendor/cisco/ciscoSwitchQosMIB.py
-@@ -0,0 +1,213 @@
+@@ -0,0 +1,216 @@
 +from enum import unique, Enum
 +from bisect import bisect_right
 +
@@ -615,7 +630,10 @@ index 0000000..bf1f13b
 +        """
 +        # if_index, if_direction, queue_index and counter id should be passed
 +
-+        return self.mib_oid_to_queue_map.get(sub_id)
++        if sub_id in self.mib_oid_to_queue_map:
++            return self.mib_oid_to_queue_map[sub_id] & 0x00000000ffffffff
++        else:
++            return None
 +
 +class csqIfQosGroupStatsTable(metaclass=MIBMeta, prefix='.1.3.6.1.4.1.9.9.580.1.5.5'):
 +    """
@@ -630,7 +648,7 @@ index 0000000..bf1f13b
 +    queue_stat_request = \
 +        SubtreeMIBEntry('1.4', queue_updater, ValueType.INTEGER, queue_updater.handle_stat_request)
 diff --git a/tests/mock_tables/counters_db.json b/tests/mock_tables/counters_db.json
-index f9efd46..936e244 100644
+index f9efd46..19ceeb0 100644
 --- a/tests/mock_tables/counters_db.json
 +++ b/tests/mock_tables/counters_db.json
 @@ -81,7 +81,25 @@
@@ -911,7 +929,7 @@ index f9efd46..936e244 100644
 +    "SAI_PORT_STAT_IF_IN_MULTICAST_PKTS": "0",
 +    "SAI_PORT_STAT_PAUSE_RX_PKTS": "0",
 +    "SAI_PORT_STAT_PAUSE_TX_PKTS": "0",
-+    "SAI_PORT_STAT_PFC_0_RX_PKTS": "1",
++    "SAI_PORT_STAT_PFC_0_RX_PKTS": "209347219842134092490",
 +    "SAI_PORT_STAT_PFC_0_TX_PKTS": "1",
 +    "SAI_PORT_STAT_PFC_1_RX_PKTS": "2",
 +    "SAI_PORT_STAT_PFC_1_TX_PKTS": "2",
@@ -1549,7 +1567,7 @@ index f9efd46..936e244 100644
 +  },
 +  "COUNTERS:oid:0x15000000000230": {
 +    "SAI_QUEUE_STAT_PACKETS": "1",
-+    "SAI_QUEUE_STAT_BYTES": "2",
++    "SAI_QUEUE_STAT_BYTES": "23492723984237432",
 +    "SAI_QUEUE_STAT_DROPPED_PACKETS": "3",
 +    "SAI_QUEUE_STAT_DISCARD_DROPPED_PACKETS": "4",
 +    "SAI_QUEUE_STAT_CURR_OCCUPANCY_BYTES": "5",
@@ -1742,7 +1760,7 @@ index f9efd46..936e244 100644
  }
 diff --git a/tests/test_pfc.py b/tests/test_pfc.py
 new file mode 100644
-index 0000000..f3c4537
+index 0000000..6b617e7
 --- /dev/null
 +++ b/tests/test_pfc.py
 @@ -0,0 +1,205 @@
@@ -1863,7 +1881,7 @@ index 0000000..f3c4537
 +        value0 = response.values[0]
 +        self.assertEqual(value0.type_, ValueType.INTEGER)
 +        self.assertEqual(str(value0.name), str(oid))
-+        self.assertEqual(value0.data, 1)
++        self.assertEqual(value0.data, 209347219842134092490 % pow(2, 32)) # Test integer truncation
 +
 +    def test_getNextPduRequestForPriority(self):
 +        oid = ObjectIdentifier(8, 0, 0, 0, (1, 3, 6, 1, 4, 1, 9, 9, 813, 1, 2, 1, 2, 1, 2))
@@ -1950,10 +1968,10 @@ index 0000000..f3c4537
 +        value0 = response.values[0]
 +        self.assertEqual(value0.type_, ValueType.INTEGER)
 +        self.assertEqual(str(value0.name), str(expected_oid))
-+        self.assertEqual(value0.data, 1)
++        self.assertEqual(value0.data, 209347219842134092490 % pow(2, 32)) # Test integer truncation
 diff --git a/tests/test_queues_stat.py b/tests/test_queues_stat.py
 new file mode 100644
-index 0000000..37c7fbb
+index 0000000..58f6771
 --- /dev/null
 +++ b/tests/test_queues_stat.py
 @@ -0,0 +1,110 @@
@@ -2018,7 +2036,7 @@ index 0000000..37c7fbb
 +        value0 = response.values[0]
 +        self.assertEqual(value0.type_, ValueType.INTEGER)
 +        self.assertEqual(str(value0.name), str(expected_oid))
-+        self.assertEqual(value0.data, 2)
++        self.assertEqual(value0.data, 23492723984237432 & 0x00000000ffffffff) # Test integer truncation
 +
 +    def test_getIngressQueueCounters(self):
 +        oid = ObjectIdentifier(8, 0, 0, 0, (1, 3, 6, 1, 4, 1, 9, 9, 580, 1, 5, 5, 1, 4, 1, 1, 1, 1))
