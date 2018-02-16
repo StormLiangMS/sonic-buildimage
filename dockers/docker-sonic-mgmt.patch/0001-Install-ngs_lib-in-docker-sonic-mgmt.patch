@@ -1,0 +1,42 @@
+From edf186b3262613b052aca5f660d07a4d44a4fd01 Mon Sep 17 00:00:00 2001
+From: Joe LeVeque <jolevequ@microsoft.com>
+Date: Wed, 14 Feb 2018 01:30:21 +0000
+Subject: [PATCH] Install ngs_lib in docker-sonic-mgmt
+
+---
+ Dockerfile.j2 | 4 ++++
+ pip.conf      | 7 +++++++
+ 2 files changed, 11 insertions(+)
+ create mode 100644 pip.conf
+
+diff --git a/Dockerfile.j2 b/Dockerfile.j2
+index be2f1b6..f2de788 100644
+--- a/Dockerfile.j2
++++ b/Dockerfile.j2
+@@ -87,6 +87,10 @@ RUN chmod go= /var/$user/.ssh -R
+ # Add user to sudoers
+ RUN echo "$user ALL=(ALL) NOPASSWD:ALL" >>/etc/sudoers
+ 
++# Install ngs library
++COPY ["pip.conf", "/etc/"]
++RUN pip install ngs_lib
++
+ USER $user
+ 
+ # Install Azure CLI
+diff --git a/pip.conf b/pip.conf
+new file mode 100644
+index 0000000..195a05c
+--- /dev/null
++++ b/pip.conf
+@@ -0,0 +1,7 @@
++[global]
++timeout = 60
++index-url = http://pypi.corp.microsoft.com/root/prod/+simple/
++trusted-host = pypi.corp.microsoft.com
++
++[search]
++index = http://pypi.corp.microsoft.com/root/prod/
+-- 
+2.1.4
+
