@@ -1,19 +1,19 @@
 From 2ae88043c2c748c55e70ae142fc4f8f83ce83c49 Mon Sep 17 00:00:00 2001
+
 From: Qi Luo <qiluo-msft@users.noreply.github.com>
-Date: Fri, 17 Mar 2017 00:25:21 +0000
+
 Subject: [PATCH 1/1] Add internal vendor specific kernel patches to public
  kernel patch
-
 ---
- patch/arch-nr-512-gpio.patch                      | 1 +
- patch/config-cisco-n3132-gx.patch                 | 1 +
- patch/driver-hwmon-adt7462-fix-alarm-mask.patch   | 1 +
- patch/driver-hwmon-pmbus-cisco_n2200-update.patch | 1 +
- patch/driver-hwmon-pmbus-cisco_n2200.patch        | 1 +
- patch/driver-hwmon-pmbus-tps40422.patch           | 1 +
- patch/driver-mfd-enable-dh89xxcc-gpio.patch       | 1 +
- patch/driver-rtc-cmos-address-space-256.patch     | 1 +
- patch/series                                      | 8 ++++++++
+ patch/arch-nr-512-gpio.patch                      |    1 +
+ patch/config-cisco-n3132-gx.patch                 |    1 +
+ patch/driver-hwmon-adt7462-fix-alarm-mask.patch   |    1 +
+ patch/driver-hwmon-pmbus-cisco_n2200-update.patch |    1 +
+ patch/driver-hwmon-pmbus-cisco_n2200.patch        |    1 +
+ patch/driver-hwmon-pmbus-tps40422.patch           |    1 +
+ patch/driver-mfd-enable-dh89xxcc-gpio.patch       |    1 +
+ patch/driver-rtc-cmos-address-space-256.patch     |    1 +
+ patch/series                                      |    8 ++++++++
  9 files changed, 16 insertions(+)
  create mode 120000 patch/arch-nr-512-gpio.patch
  create mode 120000 patch/config-cisco-n3132-gx.patch
@@ -26,7 +26,7 @@ Subject: [PATCH 1/1] Add internal vendor specific kernel patches to public
 
 diff --git a/patch/arch-nr-512-gpio.patch b/patch/arch-nr-512-gpio.patch
 new file mode 120000
-index 0000000..9bdd1df
+index 0000000..5ecf1f4
 --- /dev/null
 +++ b/patch/arch-nr-512-gpio.patch
 @@ -0,0 +1 @@
@@ -34,7 +34,7 @@ index 0000000..9bdd1df
 \ No newline at end of file
 diff --git a/patch/config-cisco-n3132-gx.patch b/patch/config-cisco-n3132-gx.patch
 new file mode 120000
-index 0000000..6ae8bbc
+index 0000000..c94ee63
 --- /dev/null
 +++ b/patch/config-cisco-n3132-gx.patch
 @@ -0,0 +1 @@
@@ -42,7 +42,7 @@ index 0000000..6ae8bbc
 \ No newline at end of file
 diff --git a/patch/driver-hwmon-adt7462-fix-alarm-mask.patch b/patch/driver-hwmon-adt7462-fix-alarm-mask.patch
 new file mode 120000
-index 0000000..0460a95
+index 0000000..8e04b38
 --- /dev/null
 +++ b/patch/driver-hwmon-adt7462-fix-alarm-mask.patch
 @@ -0,0 +1 @@
@@ -50,7 +50,7 @@ index 0000000..0460a95
 \ No newline at end of file
 diff --git a/patch/driver-hwmon-pmbus-cisco_n2200-update.patch b/patch/driver-hwmon-pmbus-cisco_n2200-update.patch
 new file mode 120000
-index 0000000..ef8c603
+index 0000000..c6612e4
 --- /dev/null
 +++ b/patch/driver-hwmon-pmbus-cisco_n2200-update.patch
 @@ -0,0 +1 @@
@@ -58,7 +58,7 @@ index 0000000..ef8c603
 \ No newline at end of file
 diff --git a/patch/driver-hwmon-pmbus-cisco_n2200.patch b/patch/driver-hwmon-pmbus-cisco_n2200.patch
 new file mode 120000
-index 0000000..6248897
+index 0000000..1fa3258
 --- /dev/null
 +++ b/patch/driver-hwmon-pmbus-cisco_n2200.patch
 @@ -0,0 +1 @@
@@ -66,7 +66,7 @@ index 0000000..6248897
 \ No newline at end of file
 diff --git a/patch/driver-hwmon-pmbus-tps40422.patch b/patch/driver-hwmon-pmbus-tps40422.patch
 new file mode 120000
-index 0000000..d322d91
+index 0000000..6925503
 --- /dev/null
 +++ b/patch/driver-hwmon-pmbus-tps40422.patch
 @@ -0,0 +1 @@
@@ -74,7 +74,7 @@ index 0000000..d322d91
 \ No newline at end of file
 diff --git a/patch/driver-mfd-enable-dh89xxcc-gpio.patch b/patch/driver-mfd-enable-dh89xxcc-gpio.patch
 new file mode 120000
-index 0000000..f7c723a
+index 0000000..715a9b8
 --- /dev/null
 +++ b/patch/driver-mfd-enable-dh89xxcc-gpio.patch
 @@ -0,0 +1 @@
@@ -82,26 +82,27 @@ index 0000000..f7c723a
 \ No newline at end of file
 diff --git a/patch/driver-rtc-cmos-address-space-256.patch b/patch/driver-rtc-cmos-address-space-256.patch
 new file mode 120000
-index 0000000..7038bea
+index 0000000..8565fe5
 --- /dev/null
 +++ b/patch/driver-rtc-cmos-address-space-256.patch
 @@ -0,0 +1 @@
 +../../sonic-linux-kernel.patch/patch/driver-rtc-cmos-address-space-256.patch
 \ No newline at end of file
 diff --git a/patch/series b/patch/series
-index fee5fe1..d24d1cd 100644
+index dc8ceb1..4b6ca14 100644
 --- a/patch/series
 +++ b/patch/series
-@@ -1,19 +1,27 @@
+@@ -1,5 +1,6 @@
  # This series applies on GIT commit 1451b36b2b0d62178e42f648d8a18131af18f7d8
  kernel-sched-core-fix-cgroup-fork-race.patch
 +arch-nr-512-gpio.patch
  config-dell-s6000.patch
  config-mlnx-sn2700.patch
  config-dell-z9100.patch
- config-ingrasys-s9100.patch
+@@ -7,14 +8,21 @@ config-ingrasys-s9100.patch
  config-arista-7060-cx32s.patch
  config-mitac-ly1200.patch
+ config-quanta-ix1b.patch
 +config-cisco-n3132-gx.patch
  driver-at24-fix-odd-length-two-byte-access.patch
 +driver-hwmon-adt7462-fix-alarm-mask.patch
@@ -120,6 +121,3 @@ index fee5fe1..d24d1cd 100644
  driver-support-sff-8436-eeprom.patch
  driver-support-sff-8436-eeprom-update.patch
  driver-hwmon-pmbus-add-dps460-support.patch
--- 
-2.11.0
-
