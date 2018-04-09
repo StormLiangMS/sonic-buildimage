@@ -41,9 +41,9 @@ $template SONiCFileFormat,"%timegenerated%.%timegenerated:::date-subseconds% %HO
 $ActionFileDefaultTemplate SONiCFileFormat
 
 #Set remote syslog server
-*.* @10.20.6.16:514;SONiCFileFormat
+*.* @10.20.6.16:514
 {% for server in SYSLOG_SERVER if server != "10.20.6.16" %}
-*.* @{{ server }}:514;SONiCFileFormat
+*.* @{{ server }}:514
 {% endfor %}
 
 #
