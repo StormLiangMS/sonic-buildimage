@@ -1,0 +1,26 @@
+From 994a54bbe8a4b2514da99221d80c8f7d5d51f12b Mon Sep 17 00:00:00 2001
+From: Jiahua Wang <jiahwang@cisco.com>
+Date: Sat, 19 Nov 2016 02:15:23 +0000
+Subject: [PATCH 2/2] Increase ARCH_NR_GPIOs to 1024
+
+Signed-off-by: Jiahua Wang <jiahwang@cisco.com>
+---
+ include/asm-generic/gpio.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/asm-generic/gpio.h b/include/asm-generic/gpio.h
+index 23e3645..787a429 100644
+--- a/include/asm-generic/gpio.h
++++ b/include/asm-generic/gpio.h
+@@ -27,7 +27,7 @@
+  */
+ 
+ #ifndef ARCH_NR_GPIOS
+-#define ARCH_NR_GPIOS		256
++#define ARCH_NR_GPIOS		1024
+ #endif
+ 
+ /*
+-- 
+2.1.4
+
