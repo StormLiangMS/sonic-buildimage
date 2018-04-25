@@ -1,4 +1,2 @@
 0001-Add-cisco-specific-mibs.patch
 0002-Implement-BgpInfo.patch
-0003-Added-PSU-support.patch
-0004-Added-ciscoPfcExtMIB-ciscoSwitchQosMIB-MIBs-1.patch
