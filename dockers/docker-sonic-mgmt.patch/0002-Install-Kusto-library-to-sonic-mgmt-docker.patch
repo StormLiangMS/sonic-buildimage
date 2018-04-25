@@ -1,19 +1,20 @@
-From 979c690540cce966d53ea22cd1453bc0343165a4 Mon Sep 17 00:00:00 2001
-From: Shu0T1an ChenG <shuche@microsoft.com>
-Date: Thu, 22 Feb 2018 12:51:36 -0800
+From 1204a1205c39090ca5f796af10a9625d4bb832b6 Mon Sep 17 00:00:00 2001
+From: Qi Luo <qiluo-msft@users.noreply.github.com>
+Date: Wed, 25 Apr 2018 00:48:34 +0000
 Subject: [PATCH] Install Kusto library to sonic-mgmt docker
 
+Signed-off-by: Qi Luo <qiluo-msft@users.noreply.github.com>
 ---
- Dockerfile.j2 | 6 ++++++
- 1 file changed, 6 insertions(+)
+ dockers/docker-sonic-mgmt/Dockerfile.j2 | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/dockers/docker-sonic-mgmt/Dockerfile.j2 b/dockers/docker-sonic-mgmt/Dockerfile.j2
-index f2de788..0f53a11 100644
+diff --git a/Dockerfile.j2 b/Dockerfile.j2
+index 1e95531a..154fa234 100644
 --- a/Dockerfile.j2
 +++ b/Dockerfile.j2
-@@ -46,6 +46,12 @@ RUN pip install ipaddr \
-                 paramiko==2.1.2 \
-                 adal
+@@ -49,6 +49,13 @@ RUN pip install ipaddr \
+ # Install Azure Storage package
+ RUN pip install azure-storage
  
 +# Install kusto library
 +RUN curl -L 'https://sonicstorage.blob.core.windows.net/packages/kusto_client-0.4.0-py2.py3-none-any.whl?sv=2015-04-05&sr=b&sig=HR2HA3uggAqR0r%2B4mK8kYNqpt31qsimY%2BfkO2C%2FNUJk%3D&se=2031-11-14T23%3A25%3A19Z&sp=r' -o kusto_client-0.4.0-py2.py3-none-any.whl
@@ -21,9 +22,10 @@ index f2de788..0f53a11 100644
 +
 +RUN pip install kusto_client-0.4.0-py2.py3-none-any.whl \
 +                kusto_ingest_client-0.3.2-py2.py3-none-any.whl
- 
++
  ## Copy and install sonic-mgmt docker dependencies
  COPY \
+ {% for deb in docker_sonic_mgmt_debs.split(' ') -%}
 -- 
-2.1.4
+2.11.0
 
