@@ -1,27 +1,29 @@
-From 23bc289d70138d70bc6ab0b7e7774ffd77cc8c68 Mon Sep 17 00:00:00 2001
+From cb4d72ef3a9bc054edcda588adc5a4509f73b6af Mon Sep 17 00:00:00 2001
 From: Qi Luo <qiluo-msft@users.noreply.github.com>
 Date: Sat, 26 Aug 2017 01:55:52 +0000
-Subject: [PATCH 2/2] Implement BgpInfo
+Subject: [PATCH] Implement BgpInfo
 
 ---
  __init__.py                                     |   0
  src/sonic_ax_impl/lib/__init__.py               |   0
- src/sonic_ax_impl/lib/vtysh_helper.py           | 128 ++++++++++++++++++++++++
+ src/sonic_ax_impl/lib/vtysh_helper.py           | 130 ++++++++++++++++++++++++
  src/sonic_ax_impl/main.py                       |   1 +
  src/sonic_ax_impl/mibs/vendor/cisco/__init__.py |   2 +-
- src/sonic_ax_impl/mibs/vendor/cisco/bgp4.py     |  44 ++++++++
+ src/sonic_ax_impl/mibs/vendor/cisco/bgp4.py     |  45 ++++++++
  tests/__init__.py                               |   1 +
  tests/mock_tables/bgpsummary_ipv4.txt           |  35 +++++++
  tests/mock_tables/bgpsummary_ipv6.txt           |  31 ++++++
- tests/mock_tables/socket.py                     |  47 +++++++++
- tests/test_vtysh.py                             | 100 ++++++++++++++++++
- 11 files changed, 388 insertions(+), 1 deletion(-)
+ tests/mock_tables/bgpsummary_ipv6_nobgp.txt     |   4 +
+ tests/mock_tables/socket.py                     |  45 ++++++++
+ tests/test_vtysh.py                             | 110 ++++++++++++++++++++
+ 12 files changed, 403 insertions(+), 1 deletion(-)
  create mode 100644 __init__.py
  create mode 100644 src/sonic_ax_impl/lib/__init__.py
  create mode 100644 src/sonic_ax_impl/lib/vtysh_helper.py
  create mode 100644 src/sonic_ax_impl/mibs/vendor/cisco/bgp4.py
  create mode 100644 tests/mock_tables/bgpsummary_ipv4.txt
  create mode 100644 tests/mock_tables/bgpsummary_ipv6.txt
+ create mode 100644 tests/mock_tables/bgpsummary_ipv6_nobgp.txt
  create mode 100644 tests/mock_tables/socket.py
  create mode 100644 tests/test_vtysh.py
 
@@ -33,10 +35,10 @@ new file mode 100644
 index 0000000..e69de29
 diff --git a/src/sonic_ax_impl/lib/vtysh_helper.py b/src/sonic_ax_impl/lib/vtysh_helper.py
 new file mode 100644
-index 0000000..7d8f01c
+index 0000000..83d3fb9
 --- /dev/null
 +++ b/src/sonic_ax_impl/lib/vtysh_helper.py
-@@ -0,0 +1,128 @@
+@@ -0,0 +1,130 @@
 +import re
 +import ipaddress
 +import socket
@@ -62,7 +64,7 @@ index 0000000..7d8f01c
 +    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 +    s.connect((HOST, PORT))
 +
-+    cmd = b"zebra\r\n" + command.encode() + b"\r\nexit\r\n"
++    cmd = b"zebra\n" + command.encode() + b"\nexit\n"
 +    s.send(cmd)
 +
 +    acc = b""
@@ -97,6 +99,8 @@ index 0000000..7d8f01c
 +        l = ls[li]
 +        if l.startswith('Neighbor        '): break
 +        if l.startswith('No IPv'): # eg. No IPv6 neighbor is configured
++            return bgpinfo
++        if l.endswith('> exit'): # last command in the lines
 +            return bgpinfo
 +        li += 1
 +
@@ -189,10 +193,10 @@ index 822ac73..e295a87 100644
  from . import ciscoEntityFruControlMIB
 diff --git a/src/sonic_ax_impl/mibs/vendor/cisco/bgp4.py b/src/sonic_ax_impl/mibs/vendor/cisco/bgp4.py
 new file mode 100644
-index 0000000..a77c7a7
+index 0000000..ce03675
 --- /dev/null
 +++ b/src/sonic_ax_impl/mibs/vendor/cisco/bgp4.py
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,45 @@
 +from bisect import bisect_right
 +from sonic_ax_impl import mibs
 +from sonic_ax_impl.lib import vtysh_helper
@@ -202,7 +206,8 @@ index 0000000..a77c7a7
 +class BgpSessionUpdater(MIBUpdater):
 +    def __init__(self):
 +        super().__init__()
-+        self.update_data()
++        self.session_status_map = {}
++        self.session_status_list = []
 +
 +    def update_data(self):
 +        self.session_status_map = {}
@@ -322,12 +327,22 @@ index 0000000..318f3db
 +str-msn2700-05>
 +str-msn2700-05> exit
 +
+diff --git a/tests/mock_tables/bgpsummary_ipv6_nobgp.txt b/tests/mock_tables/bgpsummary_ipv6_nobgp.txt
+new file mode 100644
+index 0000000..76722aa
+--- /dev/null
++++ b/tests/mock_tables/bgpsummary_ipv6_nobgp.txt
+@@ -0,0 +1,4 @@
++Hello, this is Quagga (version 0.99.24.1).                                                                                                                            Copyright 1996-2005 Kunihiro Ishiguro, et al.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     User Access Verification                                                                                                                                              
++"Password:
++str-msn2700-03> show ipv6 bgp summary
++str-msn2700-03> exit
 diff --git a/tests/mock_tables/socket.py b/tests/mock_tables/socket.py
 new file mode 100644
-index 0000000..86d6f02
+index 0000000..433ca55
 --- /dev/null
 +++ b/tests/mock_tables/socket.py
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,45 @@
 +import os
 +from collections import namedtuple
 +import unittest
@@ -343,30 +358,28 @@ index 0000000..86d6f02
 +
 +# Monkey patch
 +class MockSocket(_socket_class):
-+    _instance_count = 0
 +
 +    def __init__(self, *args, **kwargs):
 +        super(MockSocket, self).__init__(*args, **kwargs)
-+        MockSocket._instance_count %= 2
-+        MockSocket._instance_count += 1
-+        self.first = True
++        self._string_sent = b''
 +
 +    def connect(self, *args, **kwargs):
 +        pass
 +
 +    def send(self, *args, **kwargs):
++        string = args[0]
++        self._string_sent = string
 +        pass
 +
 +    def recv(self, *args, **kwargs):
-+        if not self.first:
-+            return None
-+        self.first = False
-+
-+        if MockSocket._instance_count == 1:
++        if b'show ip bgp summary' in self._string_sent:
 +            filename = INPUT_DIR + '/bgpsummary_ipv4.txt'
-+        elif MockSocket._instance_count == 2:
++        elif b'show ipv6 bgp summary' in self._string_sent:
 +            filename = INPUT_DIR + '/bgpsummary_ipv6.txt'
++        else:
++            return None
 +
++        self._string_sent = b''
 +        ret = namedtuple('ret', ['returncode', 'stdout'])
 +        ret.returncode = 0
 +        with open(filename, 'rb') as f:
@@ -377,10 +390,10 @@ index 0000000..86d6f02
 +socket.socket = MockSocket
 diff --git a/tests/test_vtysh.py b/tests/test_vtysh.py
 new file mode 100644
-index 0000000..128bcff
+index 0000000..6a82d26
 --- /dev/null
 +++ b/tests/test_vtysh.py
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,110 @@
 +import os
 +import sys
 +
@@ -398,11 +411,14 @@ index 0000000..128bcff
 +from ax_interface.constants import PduTypes
 +from sonic_ax_impl.mibs.ietf import rfc4363
 +from sonic_ax_impl.main import SonicMIB
++from sonic_ax_impl.lib.vtysh_helper import parse_bgp_summary
 +
 +class TestSonicMIB(TestCase):
 +    @classmethod
 +    def setUpClass(cls):
 +        cls.lut = MIBTable(SonicMIB)
++        for updater in cls.lut.updater_instances:
++            updater.update_data()
 +
 +    def test_getpdu_established(self):
 +        oid = ObjectIdentifier(20, 0, 0, 0, (1, 3, 6, 1, 4, 1, 9, 9, 187, 1, 2, 5, 1, 3, 1, 4, 10, 0, 0, 61))
@@ -481,6 +497,14 @@ index 0000000..128bcff
 +        self.assertEqual(value0.type_, ValueType.INTEGER)
 +        self.assertEqual(str(value0.name), str(oid))
 +        self.assertEqual(value0.data, 6)
++
++    def parse_no_bgp():
++        filename = 'bgpsummary_ipv6_nobgp.txt'
++        with open(filename, 'rb') as f:
++            bgpsu = f.read()
++        bgpsumm_ipv6 = parse_bgp_summary(bgpsu)
++        self.assertEqual(bgpsumm_ipv6, [])
+\ No newline at end of file
 -- 
 2.11.0
 
