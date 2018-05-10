@@ -77,6 +77,7 @@ router bgp {{ DEVICE_METADATA['localhost']['bgp_asn'] }}
 {% endif %}
     neighbor {{ neighbor_addr }} activate
     neighbor {{ neighbor_addr }} soft-reconfiguration inbound
+    neighbor {{ neighbor_addr }} maximum-prefix 12000 90 warning-only
     maximum-paths 64
   exit-address-family
 {% endif %}
@@ -87,6 +88,7 @@ router bgp {{ DEVICE_METADATA['localhost']['bgp_asn'] }}
 {% endif %}
     neighbor {{ neighbor_addr }} activate
     neighbor {{ neighbor_addr }} soft-reconfiguration inbound
+    neighbor {{ neighbor_addr }} maximum-prefix 8000 90 warning-only
     maximum-paths 64
   exit-address-family
 {% endif %}
