@@ -1,1 +1,0 @@
-SAI_INIT_CONFIG_FILE=/etc/bcm/th2-a7260cx3-64-110x50G+8x100G+1x40G.config.bcm
