@@ -10,8 +10,9 @@ You are on
 Unauthorized access and/or use are prohibited.
 All access and/or use are subject to monitoring.
 
-Help:    http://azure.github.io/SONiC/
-Wiki:    https://microsoft.sharepoint.com/teams/WAG/AzureNetworking/Wiki/SONiC.aspx
-On-Call: https://icm.ad.msft.net/imp/CurrentOnCall.aspx?teamId=26162
-Contact: linuxnetdev@microsoft.com
+Help:      http://azure.github.io/SONiC/
+Wiki:      https://microsoft.sharepoint.com/teams/WAG/AzureNetworking/Wiki/SONiC.aspx
+On-Call:   https://icm.ad.msft.net/imp/CurrentOnCall.aspx?teamId=26162
+Dashboard: https://aka.ms/sonic-dri
+Contact:   sonicdev@microsoft.com
 
