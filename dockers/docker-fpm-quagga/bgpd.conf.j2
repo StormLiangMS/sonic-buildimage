@@ -19,6 +19,85 @@ log facility local4
 !
 ! bgp multiple-instance
 !
+{% if DEVICE_METADATA['localhost']['type'] == 'LeafRouter' %}
+ip community-list standard LEAK_COMMUNITY permit 8075:10400
+ip community-list standard UPSTREAM_PREFIX permit 8075:54000
+ip prefix-list DEFAULT_IPV4 permit 0.0.0.0/0
+ip prefix-list IPV4_18_OR_LONGER permit 0.0.0.0/0 ge 18
+ipv6 prefix-list DEFAULT_IPV6 permit ::/0
+ipv6 prefix-list IPV6_64_ONLY permit ::/0 ge 64 le 64
+!
+route-map FROM_TIER0_V4 permit 10
+ match community UPSTREAM_PREFIX
+ match ip address prefix-list DEFAULT_IPV4
+!
+route-map FROM_TIER0_V4 permit 20
+ match community LEAK_COMMUNITY
+ match ip address prefix-list IPV4_18_OR_LONGER
+ set comm-list LEAK_COMMUNITY delete
+!
+route-map FROM_TIER0_V4 permit 30
+ match ip address prefix-list IPV4_18_OR_LONGER
+!
+route-map FROM_TIER0_V4 deny 1000
+!
+route-map FROM_TIER0_V6 permit 10
+  match community UPSTREAM_PREFIX
+  match ipv6 address prefix-list DEFAULT_IPV6
+!
+route-map FROM_TIER0_V6 permit 20
+  match community LEAK_COMMUNITY
+  match ipv6 address prefix-list IPV6_64_ONLY
+  set comm-list LEAK_COMMUNITY delete
+!
+route-map FROM_TIER0_V6 permit 30
+  match ipv6 address prefix-list IPV6_64_ONLY
+!
+route-map FROM_TIER0_V6 deny 1000
+!
+route-map FROM_TIER2_V4 permit 10
+ set community UPSTREAM_PREFIX additive
+!
+route-map FROM_TIER2_V6 permit 10
+ set community UPSTREAM_PREFIX additive
+!
+route-map TO_TIER0_V4 permit 10
+ match community UPSTREAM_PREFIX
+ match ip address prefix-list DEFAULT_IPV4
+!
+route-map TO_TIER0_V4 permit 20
+ match community LEAK_COMMUNITY
+!
+route-map TO_TIER0_V4 permit 30
+ match community UPSTREAM_PREFIX
+ set community no-export additive
+!
+route-map TO_TIER0_V4 permit 1000
+!
+route-map TO_TIER0_V6 permit 10
+ match community UPSTREAM_PREFIX
+ match ipv6 address prefix-list DEFAULT_IPV6
+!
+route-map TO_TIER0_V6 permit 20
+ match community LEAK_COMMUNITY
+!
+route-map TO_TIER0_V6 permit 30
+ match community UPSTREAM_PREFIX
+ set community no-export additive
+!
+route-map TO_TIER0_V6 permit 1000
+!
+route-map TO_TIER2_V4 deny 5
+ match community UPSTREAM_PREFIX
+!
+route-map TO_TIER2_V4 permit 10
+!
+route-map TO_TIER2_V6 deny 5
+ match community UPSTREAM_PREFIX
+!
+route-map TO_TIER2_V6 permit 10
+!
+{% endif %}
 route-map FROM_BGP_SPEAKER_V4 permit 10
 !
 route-map TO_BGP_SPEAKER_V4 deny 10
@@ -67,29 +146,50 @@ router bgp {{ DEVICE_METADATA['localhost']['bgp_asn'] }}
       or  (bgp_session['holdtime'] is defined  and bgp_session['holdtime']  | int != 180) %}
   neighbor {{ neighbor_addr }} timers {{ bgp_session['keepalive'] }} {{ bgp_session['holdtime'] }}
 {% endif %}
+{% if (DEVICE_METADATA['localhost']['type'] == 'LeafRouter' and DEVICE_NEIGHBOR_METADATA[bgp_session['name']]['type'] == 'ToRRouter') or DEVICE_METADATA['localhost']['type'] == 'ToRRouter' %}
+  neighbor {{ neighbor_addr }} allowas-in 1
+{% endif %}
 {% if bgp_session.has_key('admin_status') and bgp_session['admin_status'] == 'down' or not bgp_session.has_key('admin_status') and DEVICE_METADATA['localhost'].has_key('default_bgp_status') and DEVICE_METADATA['localhost']['default_bgp_status'] == 'down' and DEVICE_METADATA.localhost.type != 'ToRRouter' %}
   neighbor {{ neighbor_addr }} shutdown
 {% endif %}
 {% if neighbor_addr | ipv4 %}
   address-family ipv4
-{% if DEVICE_METADATA['localhost']['type'] == 'ToRRouter' %}
-    neighbor {{ neighbor_addr }} allowas-in 1
-{% endif %}
     neighbor {{ neighbor_addr }} activate
     neighbor {{ neighbor_addr }} soft-reconfiguration inbound
     neighbor {{ neighbor_addr }} maximum-prefix 12000 90 warning-only
     maximum-paths 64
+{% if DEVICE_METADATA['localhost']['type'] == 'LeafRouter' %}
+ {%- if DEVICE_NEIGHBOR_METADATA[bgp_session['name']]['type'] == 'ToRRouter' %}
+    neighbor {{ neighbor_addr }} route-map FROM_TIER0_V4 in
+    neighbor {{ neighbor_addr }} route-map TO_TIER0_V4 out
+    neighbor {{ neighbor_addr }} send-community
+{% endif %}
+ {%- if DEVICE_NEIGHBOR_METADATA[bgp_session['name']]['type'] == 'SpineRouter' %}
+    neighbor {{ neighbor_addr }} route-map FROM_TIER2_V4 in
+    neighbor {{ neighbor_addr }} route-map TO_TIER2_V4 out
+    neighbor {{ neighbor_addr }} send-community
+{% endif %}
+{% endif %}
   exit-address-family
 {% endif %}
 {% if neighbor_addr | ipv6 %}
   address-family ipv6
-{% if DEVICE_METADATA['localhost']['type'] == 'ToRRouter' %}
-    neighbor {{ neighbor_addr }} allowas-in 1
-{% endif %}
     neighbor {{ neighbor_addr }} activate
     neighbor {{ neighbor_addr }} soft-reconfiguration inbound
     neighbor {{ neighbor_addr }} maximum-prefix 8000 90 warning-only
     maximum-paths 64
+{% if DEVICE_METADATA['localhost']['type'] == 'LeafRouter' %}
+ {%- if DEVICE_NEIGHBOR_METADATA[bgp_session['name']]['type'] == 'ToRRouter' %}
+    neighbor {{ neighbor_addr }} route-map FROM_TIER0_V6 in
+    neighbor {{ neighbor_addr }} route-map TO_TIER0_V6 out
+    neighbor {{ neighbor_addr }} send-community
+{% endif %}
+ {%- if DEVICE_NEIGHBOR_METADATA[bgp_session['name']]['type'] == 'SpineRouter' %}
+    neighbor {{ neighbor_addr }} route-map FROM_TIER2_V6 in
+    neighbor {{ neighbor_addr }} route-map TO_TIER2_V6 out
+    neighbor {{ neighbor_addr }} send-community
+{% endif %}
+{% endif %}
   exit-address-family
 {% endif %}
 {% endif %}
