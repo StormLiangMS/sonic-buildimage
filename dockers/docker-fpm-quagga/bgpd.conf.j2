@@ -56,10 +56,10 @@ route-map FROM_TIER0_V6 permit 30
 route-map FROM_TIER0_V6 deny 1000
 !
 route-map FROM_TIER2_V4 permit 10
- set community UPSTREAM_PREFIX additive
+ set community 8075:54000 additive
 !
 route-map FROM_TIER2_V6 permit 10
- set community UPSTREAM_PREFIX additive
+ set community 8075:54000 additive
 !
 route-map TO_TIER0_V4 permit 10
  match community UPSTREAM_PREFIX
