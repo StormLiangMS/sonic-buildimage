@@ -151,13 +151,13 @@ router bgp {{ DEVICE_METADATA['localhost']['bgp_asn'] }}
 {% endif %}
 {% if neighbor_addr | ipv4 %}
   address-family ipv4
+{% if (DEVICE_METADATA['localhost']['type'] == 'LeafRouter' and DEVICE_NEIGHBOR_METADATA[bgp_session['name']]['type'] == 'ToRRouter') or DEVICE_METADATA['localhost']['type'] == 'ToRRouter' %}
+    neighbor {{ neighbor_addr }} allowas-in 1
+{% endif %}
     neighbor {{ neighbor_addr }} activate
     neighbor {{ neighbor_addr }} soft-reconfiguration inbound
     neighbor {{ neighbor_addr }} maximum-prefix 12000 90 warning-only
     maximum-paths 64
-{% if (DEVICE_METADATA['localhost']['type'] == 'LeafRouter' and DEVICE_NEIGHBOR_METADATA[bgp_session['name']]['type'] == 'ToRRouter') or DEVICE_METADATA['localhost']['type'] == 'ToRRouter' %}
-    neighbor {{ neighbor_addr }} allowas-in 1
-{% endif %}
 {% if DEVICE_METADATA['localhost']['type'] == 'LeafRouter' %}
  {%- if DEVICE_NEIGHBOR_METADATA[bgp_session['name']]['type'] == 'ToRRouter' %}
     neighbor {{ neighbor_addr }} route-map FROM_TIER0_V4 in
@@ -174,12 +174,12 @@ router bgp {{ DEVICE_METADATA['localhost']['bgp_asn'] }}
 {% endif %}
 {% if neighbor_addr | ipv6 %}
   address-family ipv6
-    neighbor {{ neighbor_addr }} activate
-    neighbor {{ neighbor_addr }} soft-reconfiguration inbound
-    neighbor {{ neighbor_addr }} maximum-prefix 8000 90 warning-only
 {% if (DEVICE_METADATA['localhost']['type'] == 'LeafRouter' and DEVICE_NEIGHBOR_METADATA[bgp_session['name']]['type'] == 'ToRRouter') or DEVICE_METADATA['localhost']['type'] == 'ToRRouter' %}
     neighbor {{ neighbor_addr }} allowas-in 1
 {% endif %}
+    neighbor {{ neighbor_addr }} activate
+    neighbor {{ neighbor_addr }} soft-reconfiguration inbound
+    neighbor {{ neighbor_addr }} maximum-prefix 8000 90 warning-only
     maximum-paths 64
 {% if DEVICE_METADATA['localhost']['type'] == 'LeafRouter' %}
  {%- if DEVICE_NEIGHBOR_METADATA[bgp_session['name']]['type'] == 'ToRRouter' %}
