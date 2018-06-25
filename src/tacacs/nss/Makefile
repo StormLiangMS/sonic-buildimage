@@ -23,6 +23,7 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	git $(GIT_APPLY) ../0003-management-vrf-support.patch
 	git $(GIT_APPLY) ../0004-Skip-accessing-tacacs-servers-for-local-non-tacacs-u.patch
 	git $(GIT_APPLY) ../0005-libnss-Modify-parsing-of-IP-addr-and-port-number-str.patch
+	git $(GIT_APPLY) ../I001-Add-private-DeviceType-attribute.patch
 
 	dpkg-buildpackage -rfakeroot -b -us -uc -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
 	popd

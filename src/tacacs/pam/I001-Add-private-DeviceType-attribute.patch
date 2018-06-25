@@ -1,0 +1,24 @@
+From b271649578797c90d58258b906b85682d67280cd Mon Sep 17 00:00:00 2001
+From: Taoyu Li <taoyl@microsoft.com>
+Date: Tue, 5 Jun 2018 22:27:30 +0000
+Subject: [PATCH] Add private DeviceType attribute-value pair
+
+---
+ pam_tacplus.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/pam_tacplus.c b/pam_tacplus.c
+index 2b7d2cd..113e7d8 100644
+--- a/pam_tacplus.c
++++ b/pam_tacplus.c
+@@ -79,6 +79,7 @@ int _pam_send_account(int tac_fd, int type, const char *user, char *tty,
+     if (cmd != NULL) {
+         tac_add_attrib(&attr, "cmd", cmd);
+     }
++    tac_add_attrib(attr, "DeviceType", "All Device Types:NDG-SONIC");
+ 
+     retval = tac_acct_send(tac_fd, type, user, tty, r_addr, attr);
+ 
+-- 
+2.9.3
+

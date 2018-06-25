@@ -1,0 +1,24 @@
+From 7246bf869fbf01084612f621f46f19586c446f45 Mon Sep 17 00:00:00 2001
+From: Taoyu Li <taoyl@microsoft.com>
+Date: Tue, 5 Jun 2018 01:31:57 +0000
+Subject: [PATCH] Add private DeviceType attribute
+
+---
+ nss_tacplus.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/nss_tacplus.c b/nss_tacplus.c
+index 63f01d4..e43f57e 100644
+--- a/nss_tacplus.c
++++ b/nss_tacplus.c
+@@ -639,6 +639,7 @@ connect_tacacs(struct tac_attrib **attr, int srvr)
+             tac_add_attrib(attr, "protocol", tac_protocol);
+         /* empty cmd is required, at least for linux tac_plus */
+         tac_add_attrib(attr, "cmd", "");
++        tac_add_attrib(attr, "DeviceType", "NDG-SONIC");
+     }
+     return fd;
+ }
+-- 
+2.9.3
+
