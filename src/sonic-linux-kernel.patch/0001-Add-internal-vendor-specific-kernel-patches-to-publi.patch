@@ -109,41 +109,20 @@ index 0000000..1739840
 +../../sonic-linux-kernel.patch/patch/include-asm-generic-gpio-ARCH_NR_GPIOs-1024.patch
 \ No newline at end of file
 diff --git a/patch/series b/patch/series
-index dc8ceb1..51e1e5d 100644
+index c1a949a..f2a8d66 100644
 --- a/patch/series
 +++ b/patch/series
-@@ -7,14 +7,23 @@ config-ingrasys-s9100.patch
- config-arista-7060-cx32s.patch
- config-mitac-ly1200.patch
- config-quanta-ix1b.patch
+@@ -35,3 +35,12 @@ driver-i2c-bus-ismt-i801-support-intel-denverton.patch
+ driver-hwmon-max31790.patch
+ driver-support-optoe.patch
+ driver-support-optoe-EOF_fix.patch
 +config-cisco-n3132-gx.patch
 +config-cisco-n9200.patch
- driver-at24-fix-odd-length-two-byte-access.patch
 +driver-hwmon-adt7462-fix-alarm-mask.patch
- driver-hwmon-max6620.patch
- driver-hwmon-max6620-fix-rpm-calc.patch
- driver-hwmon-max6620-update.patch
- driver-hwmon-lm75b-update.patch
 +driver-hwmon-pmbus-cisco_n2200.patch
 +driver-hwmon-pmbus-cisco_n2200-update.patch
 +driver-hwmon-pmbus-cisco-solvan.patch
- driver-hwmon-pmbus-dni_dps460.patch
- driver-hwmon-pmbus-dni_dps460-update-pmbus-core.patch
 +driver-hwmon-pmbus-tps40422.patch
- driver-i2c-bus-intel-ismt-add-delay-param.patch
 +driver-mfd-enable-dh89xxcc-gpio.patch
 +driver-rtc-cmos-address-space-256.patch
- driver-support-sff-8436-eeprom.patch
- driver-support-sff-8436-eeprom-update.patch
- driver-hwmon-pmbus-add-dps460-support.patch
-@@ -24,6 +33,7 @@ driver-arista-net-tg3-dma-mask-4g-sb800.patch
- driver-arista-net-tg3-access-regs-indirectly.patch
- driver-arista-net-tg3-disallow-broadcom-default-mac.patch
- driver-pca954x-i2c-mux-force-deselect-on-exit-flag.patch
 +include-asm-generic-gpio-ARCH_NR_GPIOs-1024.patch
- linux-3.19-mmc-sdhci-Add-a-quirk-for-AMD-SDHC-transfer-mode-reg.patch
- linux-3.19-mmc-sdhci-pci-enable-the-clear-transfer-mode-registe.patch
- linux-3.19-mmc-sdhci-pci-enable-sdhci-doesn-t-support-hs200-qui.patch
--- 
-2.1.4
-
