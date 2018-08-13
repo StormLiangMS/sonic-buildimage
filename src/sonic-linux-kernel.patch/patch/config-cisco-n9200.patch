@@ -1,25 +1,23 @@
 From 706174f0bea9918f848efdbd5ea318094130b34c Mon Sep 17 00:00:00 2001
+
 From: jiahwang <jiahwang@cisco.com>
-Date: Mon, 5 Feb 2018 16:18:43 -0800
+
 Subject: [PATCH] Add CONFIG_SENSORS_CISCO_PMBUS=m to .config file
 
 Signed-off-by: jiahwang <jiahwang@cisco.com>
 ---
- debian/build/build_amd64_none_amd64/.config | 1 +
+ debian/build/build_amd64_none_amd64/.config |    1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/debian/build/build_amd64_none_amd64/.config b/debian/build/build_amd64_none_amd64/.config
-index b2c54a3..d18cc2f 100644
+index 6af2e6a..3a58bf4 100644
 --- a/debian/build/build_amd64_none_amd64/.config
 +++ b/debian/build/build_amd64_none_amd64/.config
-@@ -3494,6 +3494,7 @@ CONFIG_SENSORS_TPS40422=m
- CONFIG_SENSORS_UCD9200=m
+@@ -3960,6 +3960,7 @@ CONFIG_SENSORS_UCD9200=m
+ CONFIG_SENSORS_DPS1900=m
  # CONFIG_SENSORS_ZL6100 is not set
  CONFIG_SENSORS_CISCO_N2200=m
 +CONFIG_SENSORS_CISCO_PMBUS=m
  # CONFIG_SENSORS_SHT15 is not set
  CONFIG_SENSORS_SHT21=m
- # CONFIG_SENSORS_SHTC1 is not set
--- 
-2.1.4
-
+ # CONFIG_SENSORS_SHT3x is not set

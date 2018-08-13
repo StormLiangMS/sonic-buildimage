@@ -1,6 +1,7 @@
+- Cisco N2200 AC/DC Controllers
+
 From: Shuotian Cheng <shuche@microsoft.com>
 
-- Cisco N2200 AC/DC Controllers
 CONFIG_SENSORS_CISCO_N2200=m
 
 - LM25066 and TPS40422 drivers
@@ -10,38 +11,34 @@ CONFIG_SENSORS_TPS40422=m
 - Unset SERIAL_8250_PNP
 CONFIG_SERIAL_8250_PNP is not set
 ---
- debian/build/build_amd64_none_amd64/.config |   12 +++++++-----
- 1 file changed, 4 insertions(+), 2 deletions(-)
+ debian/build/build_amd64_none_amd64/.config |    5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
 diff --git a/debian/build/build_amd64_none_amd64/.config b/debian/build/build_amd64_none_amd64/.config
-index c63bdf3..1eb1257 100644
+index 126a486..6af2e6a 100644
 --- a/debian/build/build_amd64_none_amd64/.config
 +++ b/debian/build/build_amd64_none_amd64/.config
-@@ -3050,7 +3050,7 @@ CONFIG_N_GSM=m
+@@ -3456,7 +3456,7 @@ CONFIG_DEVMEM=y
  CONFIG_SERIAL_EARLYCON=y
  CONFIG_SERIAL_8250=y
  # CONFIG_SERIAL_8250_DEPRECATED_OPTIONS is not set
 -CONFIG_SERIAL_8250_PNP=y
 +# CONFIG_SERIAL_8250_PNP is not set
+ CONFIG_SERIAL_8250_FINTEK=y
  CONFIG_SERIAL_8250_CONSOLE=y
  CONFIG_SERIAL_8250_DMA=y
- CONFIG_SERIAL_8250_PCI=y
-@@ -3484,15 +3484,17 @@ CONFIG_SENSORS_PCF8591=m
- CONFIG_PMBUS=m
- CONFIG_SENSORS_PMBUS=m
- # CONFIG_SENSORS_ADM1275 is not set
--# CONFIG_SENSORS_LM25066 is not set
-+CONFIG_SENSORS_LM25066=m
- # CONFIG_SENSORS_LTC2978 is not set
- # CONFIG_SENSORS_MAX16064 is not set
+@@ -3953,12 +3953,13 @@ CONFIG_SENSORS_LM25066=m
  # CONFIG_SENSORS_MAX34440 is not set
  CONFIG_SENSORS_DNI_DPS460=m
  # CONFIG_SENSORS_MAX8688 is not set
+-# CONFIG_SENSORS_TPS40422 is not set
 +CONFIG_SENSORS_TPS40422=m
- # CONFIG_SENSORS_UCD9000 is not set
+ CONFIG_SENSORS_TPS53679=m
+ CONFIG_SENSORS_UCD9000=m
  CONFIG_SENSORS_UCD9200=m
+ CONFIG_SENSORS_DPS1900=m
  # CONFIG_SENSORS_ZL6100 is not set
 +CONFIG_SENSORS_CISCO_N2200=m
  # CONFIG_SENSORS_SHT15 is not set
  CONFIG_SENSORS_SHT21=m
- # CONFIG_SENSORS_SHTC1 is not set
+ # CONFIG_SENSORS_SHT3x is not set

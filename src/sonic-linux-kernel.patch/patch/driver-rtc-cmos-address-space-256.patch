@@ -9,13 +9,13 @@ This is where NXOS store bootloader variables
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/drivers/rtc/rtc-cmos.c b/drivers/rtc/rtc-cmos.c
-index 5b2e761..3ea74c8 100644
+index 7030d7c..5109a76 100644
 --- a/drivers/rtc/rtc-cmos.c
 +++ b/drivers/rtc/rtc-cmos.c
-@@ -685,7 +685,7 @@ cmos_do_probe(struct device *dev, struct resource *ports, int rtc_irq)
+@@ -630,7 +630,7 @@ cmos_do_probe(struct device *dev, struct resource *ports, int rtc_irq)
  #elif defined(__i386__) || defined(__x86_64__) || defined(__arm__) \
  			|| defined(__sparc__) || defined(__mips__) \
- 			|| defined(__powerpc__)
+ 			|| defined(__powerpc__) || defined(CONFIG_MN10300)
 -	address_space = 128;
 +	address_space = 256;
  #else

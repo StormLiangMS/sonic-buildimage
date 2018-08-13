@@ -11,7 +11,6 @@ Subject: [PATCH] Add internal vendor-specific kernel patches to public kernel
  patch/driver-hwmon-pmbus-cisco-solvan.patch             |  1 +
  patch/driver-hwmon-pmbus-cisco_n2200-update.patch       |  1 +
  patch/driver-hwmon-pmbus-cisco_n2200.patch              |  1 +
- patch/driver-hwmon-pmbus-tps40422.patch                 |  1 +
  patch/driver-mfd-enable-dh89xxcc-gpio.patch             |  1 +
  patch/driver-rtc-cmos-address-space-256.patch           |  1 +
  patch/include-asm-generic-gpio-ARCH_NR_GPIOs-1024.patch |  1 +
@@ -23,7 +22,6 @@ Subject: [PATCH] Add internal vendor-specific kernel patches to public kernel
  create mode 120000 patch/driver-hwmon-pmbus-cisco-solvan.patch
  create mode 120000 patch/driver-hwmon-pmbus-cisco_n2200-update.patch
  create mode 120000 patch/driver-hwmon-pmbus-cisco_n2200.patch
- create mode 120000 patch/driver-hwmon-pmbus-tps40422.patch
  create mode 120000 patch/driver-mfd-enable-dh89xxcc-gpio.patch
  create mode 120000 patch/driver-rtc-cmos-address-space-256.patch
  create mode 120000 patch/include-asm-generic-gpio-ARCH_NR_GPIOs-1024.patch
@@ -76,14 +74,6 @@ index 0000000..1fa3258
 @@ -0,0 +1 @@
 +../../sonic-linux-kernel.patch/patch/driver-hwmon-pmbus-cisco_n2200.patch
 \ No newline at end of file
-diff --git a/patch/driver-hwmon-pmbus-tps40422.patch b/patch/driver-hwmon-pmbus-tps40422.patch
-new file mode 120000
-index 0000000..6925503
---- /dev/null
-+++ b/patch/driver-hwmon-pmbus-tps40422.patch
-@@ -0,0 +1 @@
-+../../sonic-linux-kernel.patch/patch/driver-hwmon-pmbus-tps40422.patch
-\ No newline at end of file
 diff --git a/patch/driver-mfd-enable-dh89xxcc-gpio.patch b/patch/driver-mfd-enable-dh89xxcc-gpio.patch
 new file mode 120000
 index 0000000..715a9b8
@@ -109,20 +99,22 @@ index 0000000..1739840
 +../../sonic-linux-kernel.patch/patch/include-asm-generic-gpio-ARCH_NR_GPIOs-1024.patch
 \ No newline at end of file
 diff --git a/patch/series b/patch/series
-index c1a949a..f2a8d66 100644
+index 9b53624..1c5b387 100644
 --- a/patch/series
 +++ b/patch/series
-@@ -35,3 +35,12 @@ driver-i2c-bus-ismt-i801-support-intel-denverton.patch
- driver-hwmon-max31790.patch
- driver-support-optoe.patch
- driver-support-optoe-EOF_fix.patch
+@@ -47,6 +47,15 @@ config-optoe.patch
+ 0019-platform-x86-mlx-platform-Add-bus-detection-and-diff.patch
+ 0020-i2c-busses-Add-capabilities-to-i2c-mlxcpld.patch
+ linux-4.13-thermal-intel_pch_thermal-Fix-enable-check-on.patch
 +config-cisco-n3132-gx.patch
 +config-cisco-n9200.patch
 +driver-hwmon-adt7462-fix-alarm-mask.patch
 +driver-hwmon-pmbus-cisco_n2200.patch
 +driver-hwmon-pmbus-cisco_n2200-update.patch
 +driver-hwmon-pmbus-cisco-solvan.patch
-+driver-hwmon-pmbus-tps40422.patch
 +driver-mfd-enable-dh89xxcc-gpio.patch
 +driver-rtc-cmos-address-space-256.patch
 +include-asm-generic-gpio-ARCH_NR_GPIOs-1024.patch
+ #
+ # This series applies on GIT commit 1451b36b2b0d62178e42f648d8a18131af18f7d8
+ # Tkernel-sched-core-fix-cgroup-fork-race.patch
