@@ -15,7 +15,7 @@ index 63f01d4..e43f57e 100644
              tac_add_attrib(attr, "protocol", tac_protocol);
          /* empty cmd is required, at least for linux tac_plus */
          tac_add_attrib(attr, "cmd", "");
-+        tac_add_attrib(attr, "DeviceType", "All Device Types:NDG-SONIC");
++        tac_add_attrib_pair(attr, "DeviceType", '*', "All Device Types:NDG-SONIC");
      }
      return fd;
  }
