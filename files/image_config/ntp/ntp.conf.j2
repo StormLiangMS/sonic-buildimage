@@ -30,9 +30,6 @@ filegen clockstats file clockstats type day enable
 {% for ntp_server in NTP_SERVER %}
 server {{ ntp_server }} iburst
 {% endfor %}
-# default internal NTP servers
-server 10.20.8.129 iburst
-server 10.20.8.130 iburst
 
 #only listen on MGMT_INTERFACE, LOOPBACK_INTERFACE ip when MGMT_INTERFACE is not defined, or eth0 
 # if we don't have both of them (default is to listen on all ip addresses)
