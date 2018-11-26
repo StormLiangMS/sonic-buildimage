@@ -5,16 +5,16 @@ Subject: [PATCH] Stopping all BGP SLB neighbors if they're presented before
  FastReboot procedure
 
 ---
- scripts/fast-reboot | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ scripts/fast-reboot | 13 ++++++++++++
+ 1 file changed, 13 insertions(+)
 
 diff --git a/scripts/fast-reboot b/scripts/fast-reboot
 index 21d153e..5d1c6db 100755
 --- a/scripts/fast-reboot
 +++ b/scripts/fast-reboot
-@@ -7,6 +7,18 @@ then
-   exit
- fi
+@@ -103,6 +103,19 @@ then
+         ;;
+ esac
  
 +# Stopping all SLB neighbors if they're presented
 +PASSIVE_BGP_NEIGHBORS=$(sonic-cfggen -m /etc/sonic/minigraph.xml -v "BGP_PEER_RANGE | list")
@@ -28,9 +28,10 @@ index 21d153e..5d1c6db 100755
 +  *)
 +    ;;
 +esac
- 
++
  # Unload the previously loaded kernel if any loaded
  if [ "$(cat /sys/kernel/kexec_loaded)" -eq 1 ]
+ then
 -- 
 2.14.1
 
