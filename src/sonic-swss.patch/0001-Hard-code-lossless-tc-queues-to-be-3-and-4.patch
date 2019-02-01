@@ -1,0 +1,27 @@
+From 3674a44fcedb7c5a89a6cb42144396993d15195f Mon Sep 17 00:00:00 2001
+From: Wenda <wenni@microsoft.com>
+Date: Wed, 26 Sep 2018 22:24:59 +0000
+Subject: [PATCH] Hard-code lossless tc & queues to be 3 and 4
+
+Signed-off-by: Wenda <wenni@microsoft.com>
+---
+ orchagent/pfcwdorch.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/orchagent/pfcwdorch.cpp b/orchagent/pfcwdorch.cpp
+index 5278d76..33cdddd 100644
+--- a/orchagent/pfcwdorch.cpp
++++ b/orchagent/pfcwdorch.cpp
+@@ -477,6 +477,9 @@ void PfcWdSwOrch<DropHandler, ForwardHandler>::registerInWdDb(const Port& port,
+ 
+         losslessTc.insert(i);
+     }
++    // Take it for granted that TC 3 & 4 are lossless
++    losslessTc.insert(3);
++    losslessTc.insert(4);
+ 
+     if (!c_portStatIds.empty())
+     {
+-- 
+2.7.4
+
