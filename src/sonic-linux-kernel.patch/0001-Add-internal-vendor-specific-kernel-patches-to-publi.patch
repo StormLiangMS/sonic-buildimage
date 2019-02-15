@@ -102,10 +102,10 @@ diff --git a/patch/series b/patch/series
 index f0062ff..50599ae 100644
 --- a/patch/series
 +++ b/patch/series
-@@ -60,6 +60,15 @@ linux-4.13-thermal-intel_pch_thermal-Fix-enable-check-on.patch
- 0023-platform-x86-mlx-platform-Add-support-for-register-a.patch
- 0024-config-mellanox-fan-configuration.patch
- 0025-net-udp_l3mdev_accept-support.patch
+@@ -70,6 +70,15 @@ linux-4.13-thermal-intel_pch_thermal-Fix-enable-check-on.patch
+ 0033-hwmon-pmbus-Fix-driver-info-initialization-in-probe-.patch
+ 0034-mlxsw-thermal-disable-highest-zone-calculation.patch
+ 0035-platform-x86-mlx-platform-Add-CPLD4-register.patch
 +config-cisco-n3132-gx.patch
 +config-cisco-n9200.patch
 +driver-hwmon-adt7462-fix-alarm-mask.patch
