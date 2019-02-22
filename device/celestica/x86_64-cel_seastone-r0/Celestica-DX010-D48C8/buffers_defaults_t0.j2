@@ -1,13 +1,6 @@
 
 {%- set default_cable = '5m' %}
 
-{%- set ports2cable = {
-        'torrouter_server'       : '300m',
-        'leafrouter_torrouter'   : '300m',
-        'spinerouter_leafrouter' : '300m'
-        }
--%}
-
 {%- macro generate_port_lists(PORT_ALL) %}
     {# Generate list of ports #}
     {%- for port_idx in range(0,9) %}
@@ -58,7 +51,7 @@
         "egress_lossless_profile": {
             "pool":"[BUFFER_POOL|egress_lossless_pool]",
             "size":"1518",
-            "static_th":"15982720"
+            "static_th":"3995680"
         },
         "egress_lossy_profile": {
             "pool":"[BUFFER_POOL|egress_lossy_pool]",
