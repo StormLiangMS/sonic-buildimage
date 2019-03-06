@@ -15,9 +15,15 @@
 {% set hash_seed_offset = DEVICE_METADATA.localhost.namespace_id | int %}
 {% endif %}
 {% set hash_seed_value = hash_seed_offset + hash_seed %}
+{% set vxlan_port = 65330 %}
+{% set vxlan_mac = "00:12:34:56:78:9a"  %}
 [
     {
         "SWITCH_TABLE:switch": {
+{% if "broadcom" not in asic_type %}
+            "vxlan_port": "{{ vxlan_port }}",
+            "vxlan_router_mac": "{{ vxlan_mac }}",
+{% endif %}
             "ecmp_hash_seed": "{{ hash_seed_value }}",
             "lag_hash_seed": "{{ hash_seed_value }}",
             "fdb_aging_time": "600"
