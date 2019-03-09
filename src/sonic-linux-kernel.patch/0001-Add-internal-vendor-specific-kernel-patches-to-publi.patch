@@ -102,10 +102,10 @@ diff --git a/patch/series b/patch/series
 index f0062ff..50599ae 100644
 --- a/patch/series
 +++ b/patch/series
-@@ -70,6 +70,15 @@ linux-4.13-thermal-intel_pch_thermal-Fix-enable-check-on.patch
- 0033-hwmon-pmbus-Fix-driver-info-initialization-in-probe-.patch
- 0034-mlxsw-thermal-disable-highest-zone-calculation.patch
- 0035-platform-x86-mlx-platform-Add-CPLD4-register.patch
+@@ -74,6 +74,15 @@ linux-4.13-thermal-intel_pch_thermal-Fix-enable-check-on.patch
+ 0036-watchdog-mlx-wdt-kernel-upstream-and-wd-type2-change.patch
+ 0037-mlxsw-Align-code-with-kernel-v-5.1.patch
+ 0038-mlxsw-core-Add-check-for-split-port-during-thermal-z.patch
 +config-cisco-n3132-gx.patch
 +config-cisco-n9200.patch
 +driver-hwmon-adt7462-fix-alarm-mask.patch
