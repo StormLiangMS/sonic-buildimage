@@ -18,7 +18,16 @@ from pprint import pprint
 g_run = True
 
 
-def read_config_db():
+def is_announced_by_bgp(dm, addr):
+    bgpd_config = dm.get_output('show run')
+    if addr in bgpd_config:
+        for l in bgpd_config.split('\n'):
+            if 'network' in l and addr in l:
+                return True
+
+    return False
+
+def read_config_db(dm):
     with open("/etc/sonic/config_db.json") as fp:
       j = json.load(fp)
 
@@ -27,15 +36,19 @@ def read_config_db():
     # We use /64 for loopback interfaces to save ASIC resources
     lo_ipv6_prefixes = ["%s/64" % a.split('/')[0] for a in lo_ipv6_prefixes]
 
+    lo_ipv4_prefixes = filter(lambda addr: is_announced_by_bgp(dm, addr), lo_ipv4_prefixes)
+    lo_ipv6_prefixes = filter(lambda addr: is_announced_by_bgp(dm, addr), lo_ipv6_prefixes)
+
     vlan_ipv4_prefixes = []
     vlan_ipv6_prefixes = []
     for r in j["VLAN_INTERFACE"]:
-        if '.' in r:
-            a = netaddr.IPNetwork(r.split('|')[1])
-            vlan_ipv4_prefixes.append("%s/%d" % (a.network, a.prefixlen))
-        elif ':' in r:
-            a = netaddr.IPNetwork(r.split('|')[1])
-            vlan_ipv6_prefixes.append("%s/%d" % (a.network, a.prefixlen))
+        a = netaddr.IPNetwork(r.split('|')[1])
+        addr = "%s/%d" % (a.network, a.prefixlen)
+        if is_announced_by_bgp(dm, addr):
+            if '.' in addr:
+                vlan_ipv4_prefixes.append(addr)
+            elif ':' in r:
+                vlan_ipv6_prefixes.append(addr)
 
     prefixes = {
         'ip':   { 'lo':lo_ipv4_prefixes, 'vlan':vlan_ipv4_prefixes },
@@ -234,8 +247,8 @@ def main():
 
     syslog.syslog(syslog.LOG_NOTICE, "started")
     try:
-        prefixes = read_config_db()
         dm = DataManager()
+        prefixes = read_config_db(dm)
         syslog.syslog(syslog.LOG_NOTICE, "start watching")
         while g_run:
             state = { 'counter': 0 }
