@@ -132,13 +132,14 @@ def get_bgp_sp_routes(dm, routes_family, speakers):
 
 def get_missing_adv(dm, family, t1s, expected_prefixes):
     if len(expected_prefixes) == 0:
-        return [], []
+        return [], [], []
     adv = {}
     for t1 in t1s:
         adv[t1] = dm.get_output('show %s bgp neigh %s advertised-routes' % (family, t1))
 
     result = list()
     result_prefix = []
+    result_no_adv = []
     for prefix in expected_prefixes:
         counter = 0
         not_found = []
@@ -153,15 +154,18 @@ def get_missing_adv(dm, family, t1s, expected_prefixes):
             s += " { active_t1s=%d available_on_t1s=%d percent=%02d%% }" % (len(t1s), counter, percent)
             result.append(s)
             result_prefix.append(prefix)
-    return result, result_prefix
+        if counter == 0:
+            result_no_adv.append(prefix)
+    return result, result_prefix, result_no_adv
 
 
 def check(dm, family, t1s, prefixes):
-    lo_missing, lo_miss_pr = get_missing_adv(dm, family, t1s, prefixes['lo'])
-    vl_missing, vl_miss_pr = get_missing_adv(dm, family, t1s, prefixes['vlan'])
-    sp_missing, sp_miss_pr = get_missing_adv(dm, family, t1s, prefixes['vip'])
+    lo_missing, lo_miss_pr, lo_no_adv = get_missing_adv(dm, family, t1s, prefixes['lo'])
+    vl_missing, vl_miss_pr, vl_no_adv = get_missing_adv(dm, family, t1s, prefixes['vlan'])
+    sp_missing, sp_miss_pr, sp_no_adv = get_missing_adv(dm, family, t1s, prefixes['vip'])
 
     syslog_messages = []
+    alert_messages  = []
     if len(lo_missing) > 0:
         syslog_messages.append("!!! Loopback address is missing: %s" % ", ".join(lo_missing))
     if len(vl_missing) > 0:
@@ -169,24 +173,37 @@ def check(dm, family, t1s, prefixes):
     if len(sp_missing) > 0:
         syslog_messages.append("!!! Speaker advertised addresses are missing: %s" % ", ".join(sp_missing))
 
-    return syslog_messages
+    if len(lo_no_adv) > 0:
+        syslog_messages.append("Loopback no adv on all T1 for [ %s ]" % ", ".join(lo_no_adv))
+
+    if len(vl_no_adv) > 0:
+        alert_messages.append("VLANs no adv on all T1 for [ %s ]" % ", ".join(lo_no_adv))
+
+    if len(sp_no_adv) > 0:
+        alert_messages.append("VIPs no adv on all T1 for [ %s ]" % ", ".join(lo_no_adv))
+
+    return syslog_messages, alert_messages
 
 
 def one_run(dm, state, prefixes):
     syslog_messages = set()
+    alert_messages = set()
     for adv_family in ['ip', 'ipv6']:
         family_prefixes = prefixes[adv_family]
         t1s = get_bgp_t1s(dm, adv_family)
         for rcv_family in ['ip', 'ipv6']:
             speakers = get_bgp_speakers(dm, rcv_family)
             family_prefixes['vip'] = get_bgp_sp_routes(dm, adv_family, speakers)
-            ret = check(dm, adv_family, t1s, family_prefixes)
-            syslog_messages.update(ret)
+            syslog_msg, alert_msg = check(dm, adv_family, t1s, family_prefixes)
+            syslog_messages.update(syslog_msg)
+            alert_messages.update(alert_msg)
 
     if len(syslog_messages) > 0:
-        if state['counter'] > 3:
+        if state['counter'] >= 2:
             for message in syslog_messages:
                 syslog.syslog(syslog.LOG_ERR, message)
+            for message in alert_messages:
+                syslog.syslog(syslog.LOG_ALERT, message)
         state['counter'] += 1
     else:
         state['counter'] = 0
@@ -219,11 +236,17 @@ def main():
     try:
         prefixes = read_config_db()
         dm = DataManager()
-        state = { 'counter': 0 }
         syslog.syslog(syslog.LOG_NOTICE, "start watching")
         while g_run:
-            one_run(dm, state, prefixes)
-            time.sleep(60) # sleep 1 minute between runs
+            state = { 'counter': 0 }
+            for _ in range(3):
+                if not g_run:
+                    break
+                one_run(dm, state, prefixes)
+                time.sleep(60) # sleep a minute between runs
+            if not g_run:
+                break
+            time.sleep(3600-180) # sleep an hour between checks
     except Exception as e:
         raise
     finally:
