@@ -9,6 +9,7 @@ SONIC_DOCKER_IMAGES += $(DOCKER_FPM_QUAGGA)
 $(DOCKER_FPM_QUAGGA)_CONTAINER_NAME = bgp
 $(DOCKER_FPM_QUAGGA)_RUN_OPT += --privileged -t
 $(DOCKER_FPM_QUAGGA)_RUN_OPT += -v /etc/sonic:/etc/sonic:ro
+$(DOCKER_FPM_QUAGGA)_RUN_OPT += -v /var/log/quagga:/var/log/quagga:rw
 
 $(DOCKER_FPM_QUAGGA)_FILES += $(SUPERVISOR_PROC_EXIT_LISTENER_SCRIPT)
 
