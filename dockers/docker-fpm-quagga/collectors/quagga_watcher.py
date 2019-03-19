@@ -11,6 +11,8 @@ import time
 import syslog
 import traceback
 import signal
+import operator
+from collections import defaultdict
 
 from pprint import pprint
 
@@ -26,6 +28,7 @@ def is_announced_by_bgp(dm, addr):
                 return True
 
     return False
+
 
 def read_config_db(dm):
     with open("/etc/sonic/config_db.json") as fp:
@@ -51,8 +54,8 @@ def read_config_db(dm):
                 vlan_ipv6_prefixes.append(addr)
 
     prefixes = {
-        'ip':   { 'lo':lo_ipv4_prefixes, 'vlan':vlan_ipv4_prefixes },
-        'ipv6': { 'lo':lo_ipv6_prefixes, 'vlan':vlan_ipv6_prefixes },
+        'ip':   { 'lo':zip(lo_ipv4_prefixes, 'i'), 'vlan':zip(vlan_ipv4_prefixes, 'i') },
+        'ipv6': { 'lo':zip(lo_ipv6_prefixes, 'i'), 'vlan':zip(vlan_ipv6_prefixes, 'i') },
     }
 
     return prefixes
@@ -93,27 +96,15 @@ class DataManager(object):
         self.collected = {}
 
 
-def get_bgp_speakers(dm, family): # FIXME: if len < 20,
-    txt = dm.get_output('show %s bgp summary' % family)
-    t = txt.split('\n')
-    # Add a lint if it starts with *, has length more than 10 don't have something on second position and has Established session
-    lines = [line for line in t if line.startswith('*') and len(line) > 10 and line[1] != ' ' and line.strip().split(' ')[-1].isdigit()]
-    speakers = [line.split()[0].replace('*', '') for line in lines if int(line.split()[-1]) != 0]
-    return [s for s in speakers if family == 'ip' and '.' in s or family == 'ipv6' and ':' in s]
+def combine_long_output(t):
+    # sometimes ipv6 addresses so long, so quagga put a long
+    # address on one line, and all other information on other
+    # Example:
+    #
+    # 2603:1090:f08:40::49
+    #                4 64801  112718  112055        0    0    0 08w0d00h       93
 
-
-def get_bgp_t1s(dm, family, # FIXME: if len < 20,
-        pat_v4=re.compile("\A\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} "),
-        pat_v6=re.compile("\A[:0-9a-fA-F]+:[:0-9a-fA-F]+(\Z| )")):
-    txt = dm.get_output('show %s bgp summary' % family)
-    t = txt.split('\n')
-    pat = pat_v4 if family == 'ip' else pat_v6
-    t_combined = [] # sometimes ipv6 addresses so long, so quagga put a long
-                    # address on one line, and all other information on other
-                    # Example:
-                    #
-                    # 2603:1090:f08:40::49
-                    #                4 64801  112718  112055        0    0    0 08w0d00h       93
+    t_combined = []
     acc = ""
     for l in t:
         if l == "":
@@ -123,16 +114,37 @@ def get_bgp_t1s(dm, family, # FIXME: if len < 20,
         else:
             t_combined.append(acc + l)
             acc = ""
+
+    return t_combined
+
+
+def get_bgp_speakers(dm, family):
+    txt = dm.get_output('show %s bgp summary' % family)
+    t = txt.split('\n')
+    t = combine_long_output(t)
+    # Add a lint if it starts with *, has length more than 10 don't have something on second position and has Established session
+    lines = [line for line in t if line.startswith('*') and len(line) > 10 and line[1] != ' ' and line.strip().split(' ')[-1].isdigit()]
+    speakers = [(line.split()[0].replace('*', ''), "%s i" % line.split()[2]) for line in lines if int(line.split()[-1]) != 0]
+    return [s for s in speakers if family == 'ip' and '.' in s[0] or family == 'ipv6' and ':' in s[0]]
+
+
+def get_bgp_t1s(dm, family,
+        pat_v4=re.compile("\A\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} "),
+        pat_v6=re.compile("\A[:0-9a-fA-F]+:[:0-9a-fA-F]+(\Z| )")):
+    txt = dm.get_output('show %s bgp summary' % family)
+    t = txt.split('\n')
+    pat = pat_v4 if family == 'ip' else pat_v6
+    t_combined = combine_long_output(t)
     return [pat.match(line).group(0).strip() for line in t_combined if pat.match(line) and line.strip().split(' ')[-1].isdigit()]
 
 
 def get_routes(dm, routes_family, nei,
     pat_v4=re.compile("\A\*(>|=| ) \d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/\d{1,2}"),
     pat_v6=re.compile("\A\*(>|=| ) [:/0-9a-fA-F]+ ")):
-    txt = dm.get_output('show %s bgp neigh %s routes' % (routes_family, nei))
+    txt = dm.get_output('show %s bgp neigh %s routes' % (routes_family, nei[0]))
     t = txt.split('\n')
     pat = pat_v4 if routes_family == 'ip' else pat_v6
-    return [pat.match(line).group(0)[3:].strip() for line in t if pat.match(line)]
+    return [(pat.match(line).group(0)[3:].strip(), nei[1]) for line in t if pat.match(line)]
 
 
 def get_bgp_sp_routes(dm, routes_family, speakers):
@@ -143,9 +155,37 @@ def get_bgp_sp_routes(dm, routes_family, speakers):
     return list(prefixes)
 
 
+def check_prefix_aspath(found_prefixes, adv):
+    result = defaultdict(list)
+    prefix_to_aspath = { prefix:aspath for prefix, aspath, _ in found_prefixes }
+    t1_to_prefix = defaultdict(set)
+    for prefix, _, t1s in found_prefixes:
+        for t1 in t1s:
+            t1_to_prefix[t1].add(prefix)
+
+    for t1, prefixes in t1_to_prefix.items():
+        lines = adv[t1].split('\n')
+        check_next_line = False
+        for prefix in prefixes: # ToDo: not optimal, need to extract prefix from the line
+            for line in lines:
+                if prefix in line or check_next_line:
+                    if len(line) < 60:
+                        check_next_line = True
+                        continue
+                    adv_aspath = line[61:]
+                    if adv_aspath != prefix_to_aspath[prefix]:
+                        result[prefix].append((t1, adv_aspath, prefix_to_aspath[prefix]))
+                    check_next_line = False
+                    break
+                else:
+                    continue
+
+    return result
+
+
 def get_missing_adv(dm, family, t1s, expected_prefixes):
     if len(expected_prefixes) == 0:
-        return [], [], []
+        return [], [], [], []
     adv = {}
     for t1 in t1s:
         adv[t1] = dm.get_output('show %s bgp neigh %s advertised-routes' % (family, t1))
@@ -153,14 +193,18 @@ def get_missing_adv(dm, family, t1s, expected_prefixes):
     result = list()
     result_prefix = []
     result_no_adv = []
-    for prefix in expected_prefixes:
+    found_prefixes = []
+    for prefix, aspath in expected_prefixes:
         counter = 0
         not_found = []
+        found = []
         for t1 in t1s:
             if prefix in adv[t1]:
                 counter += 1
+                found.append(t1)
             else:
                 not_found.append(t1)
+        found_prefixes.append((prefix, aspath, found))
         if (len(t1s) - counter) > 0:
             s = "%s: Missing on [%s]" % (prefix, ", ".join(sorted(not_found)))
             percent = (counter*100) / len(t1s)
@@ -169,13 +213,16 @@ def get_missing_adv(dm, family, t1s, expected_prefixes):
             result_prefix.append(prefix)
         if counter == 0:
             result_no_adv.append(prefix)
-    return result, result_prefix, result_no_adv
+
+    aspath_errs = check_prefix_aspath(found_prefixes, adv)
+
+    return result, result_prefix, result_no_adv, aspath_errs
 
 
 def check(dm, family, t1s, prefixes):
-    lo_missing, lo_miss_pr, lo_no_adv = get_missing_adv(dm, family, t1s, prefixes['lo'])
-    vl_missing, vl_miss_pr, vl_no_adv = get_missing_adv(dm, family, t1s, prefixes['vlan'])
-    sp_missing, sp_miss_pr, sp_no_adv = get_missing_adv(dm, family, t1s, prefixes['vip'])
+    lo_missing, lo_miss_pr, lo_no_adv, lo_aspath = get_missing_adv(dm, family, t1s, prefixes['lo'])
+    vl_missing, vl_miss_pr, vl_no_adv, vl_aspath = get_missing_adv(dm, family, t1s, prefixes['vlan'])
+    sp_missing, sp_miss_pr, sp_no_adv, sp_aspath = get_missing_adv(dm, family, t1s, prefixes['vip'])
 
     syslog_messages = []
     alert_messages  = []
@@ -194,6 +241,22 @@ def check(dm, family, t1s, prefixes):
 
     if len(sp_no_adv) > 0:
         alert_messages.append("VIPs no adv on all T1 for [ %s ]" % ", ".join(lo_no_adv))
+
+    classes = {
+        'Loopback': lo_aspath,
+        'Vlans': vl_aspath,
+        'VIPs': sp_aspath,
+    }
+
+    for name, info in classes.items():
+        for prefix, entries in info:
+            msgs = []
+            for t1, current_aspath, expected_aspath in entries:
+                msgs.append("nh=%s ('%s' != '%s')" % (t1, current_aspath, expected_aspath))
+            if len(info) == len(t1s):
+                alert_messages.append("Wrong aspath %s. no adv on all T1 for the prefix. %s" % (prefix, ", ".join(msgs)))
+            else:
+                syslog_messages.append("Wrong aspath is announced for prefix %s. (%s)" % (prefix, ", ".join(msgs)))
 
     return syslog_messages, alert_messages
 
