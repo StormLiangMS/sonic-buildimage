@@ -220,12 +220,16 @@ def get_missing_adv(dm, family, t1s, expected_prefixes):
 
 
 def check(dm, family, t1s, prefixes):
+    syslog_messages = []
+    alert_messages  = []
+
+    if len(t1s) == 0: # No active t1s in Established state - no checks
+        return syslog_messages, alert_messages
+
     lo_missing, lo_miss_pr, lo_no_adv, lo_aspath = get_missing_adv(dm, family, t1s, prefixes['lo'])
     vl_missing, vl_miss_pr, vl_no_adv, vl_aspath = get_missing_adv(dm, family, t1s, prefixes['vlan'])
     sp_missing, sp_miss_pr, sp_no_adv, sp_aspath = get_missing_adv(dm, family, t1s, prefixes['vip'])
 
-    syslog_messages = []
-    alert_messages  = []
     if len(lo_missing) > 0:
         syslog_messages.append("!!! Loopback address is missing: %s" % ", ".join(lo_missing))
     if len(vl_missing) > 0:
@@ -237,10 +241,10 @@ def check(dm, family, t1s, prefixes):
         syslog_messages.append("Loopback no adv on all T1 for [ %s ]" % ", ".join(lo_no_adv))
 
     if len(vl_no_adv) > 0:
-        alert_messages.append("VLANs no adv on all T1 for [ %s ]" % ", ".join(lo_no_adv))
+        alert_messages.append("VLANs no adv on all T1 for [ %s ]" % ", ".join(vl_no_adv))
 
     if len(sp_no_adv) > 0:
-        alert_messages.append("VIPs no adv on all T1 for [ %s ]" % ", ".join(lo_no_adv))
+        alert_messages.append("VIPs no adv on all T1 for [ %s ]" % ", ".join(sp_no_adv))
 
     classes = {
         'Loopback': lo_aspath,
