@@ -25,27 +25,26 @@ class TestBgpTemplate(TestCase):
         print 'CMD: sonic-cfggen ' + argument
         return subprocess.check_output(self.script_file + ' ' + argument, shell=True)
     
-    def run_diff(self, file1, file2, diff):
-        return subprocess.check_output('diff {} {} >{}'.format(file1, file2, diff), shell=True)
+    def run_diff(self, file1, file2):
+        return subprocess.check_output('diff -u {} {} || true'.format(file1, file2), shell=True)
+
+    def run_bgpd_test(self, minigraph, portconfig, valid_result_file):
+        conf_template = os.path.join(self.test_dir, '..', '..', '..', 'dockers', 'docker-fpm-quagga', 'bgpd.conf.j2')
+        argument = '-m ' + minigraph + ' -p ' + portconfig + ' -t ' + conf_template + ' -y ' + self.deployment_id_asn_map + ' -j ' + self.device_metadata + ' > ' + self.output_file
+        self.run_script(argument)
+        original_filename = os.path.join(self.test_dir, 'sample_output', valid_result_file)
+        r = filecmp.cmp(original_filename, self.output_file)
+        diff_output = self.run_diff(original_filename, self.output_file) if not r else ""
+        self.assertTrue(r, "Diff:\n" + diff_output)
 
     def test_bgpd_t1(self):
-        conf_template = os.path.join(self.test_dir, '..', '..', '..', 'dockers', 'docker-fpm-quagga', 'bgpd.conf.j2')
-        argument = '-m ' + self.t1_minigraph + ' -p ' + self.dell_s6000_port_config + ' -t ' + conf_template + ' -y ' + self.deployment_id_asn_map + ' -j ' + self.device_metadata + ' > ' + self.output_file
-        self.run_script(argument)
-        self.assertTrue(filecmp.cmp(os.path.join(self.test_dir, 'sample_output', 'CO4SCH04001AALF.bgpd.conf'), self.output_file))
+        return self.run_bgpd_test(self.t1_minigraph, self.dell_s6000_port_config, 'CO4SCH04001AALF.bgpd.conf')
 
     def test_bgpd_tycoon_t1(self):
-        conf_template = os.path.join(self.test_dir, '..', '..', '..', 'dockers', 'docker-fpm-quagga', 'bgpd.conf.j2')
-        argument = '-m ' + self.tycoon_t1_minigraph + ' -p ' + self.a7060_port_config + ' -t ' + conf_template + ' -y ' + self.deployment_id_asn_map + ' -j ' + self.device_metadata + ' > ' + self.output_file
-        self.run_script(argument)
-        self.assertTrue(filecmp.cmp(os.path.join(self.test_dir, 'sample_output', 'SN1-0102-0201-11T1.bgpd.conf'), self.output_file))
+        return self.run_bgpd_test(self.tycoon_t1_minigraph, self.a7060_port_config, 'SN1-0102-0201-11T1.bgpd.conf')
 
     def test_bgpd_m0(self):
-        conf_template = os.path.join(self.test_dir, '..', '..', '..', 'dockers', 'docker-fpm-quagga', 'bgpd.conf.j2')
-        argument = '-m ' + self.m0_minigraph + ' -p ' + self.hlx_port_config + ' -t ' + conf_template + ' -y ' + self.deployment_id_asn_map + ' -j ' + self.device_metadata + ' > ' + self.output_file
-        self.run_script(argument)
-        self.assertTrue(filecmp.cmp(os.path.join(self.test_dir, 'sample_output', 'MWH01-0100-0202-01M0.bgpd.conf'), self.output_file))
-
+        return self.run_bgpd_test(self.m0_minigraph, self.hlx_port_config, 'MWH01-0100-0202-01M0.bgpd.conf')
 
     def tearDown(self):
         try:
