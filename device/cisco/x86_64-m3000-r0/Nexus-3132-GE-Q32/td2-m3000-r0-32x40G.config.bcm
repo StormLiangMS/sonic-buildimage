@@ -50,8 +50,6 @@ serdes_firmware_mode_xe=0x1
 tslam_dma_enable=1
 table_dma_enable=1
 mem_check_nocache_override=1
-mem_nocache_FP_GLOBAL_MASK_TCAM=1
-mem_nocache_FP_GM_FIELDS=1
 ###########################
 #port_init_speed_xe=40000
 #port_init_speed_xe.0=40000
@@ -750,7 +748,6 @@ port_phy_id0=0x600d
 port_phy_id1=0x8500
 phy_ext_rom_boot=0
 phy_ext_rom_boot.0=0
-#skip_L2_USER_E=0
 phy_aux_voltage_enable=1
 ###############################
 serdes_fiber_pref=1
@@ -768,8 +765,6 @@ xgxs_lcpll_xtal_refclk.3=1
 tslam_intr_enable=1
 max_vp_lags=0
 #dport_map_port=0
-#dport_map_enab=0
-#dport_map_inde=0
 #pci2eb_overrid=0
 #bcm_xlate_port_enable.0=0
 #xgxs_pdetect_1=0

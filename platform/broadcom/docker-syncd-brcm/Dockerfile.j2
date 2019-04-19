@@ -24,9 +24,6 @@ RUN apt-get install -yf kmod
 COPY ["files/dsserve", "files/bcmcmd", "start.sh", "start_led.sh", "bcmsh", "/usr/bin/"]
 RUN chmod +x /usr/bin/dsserve /usr/bin/bcmcmd
 
-## Copy cisco config.bcm to /etc/bcm/
-COPY ["td2-m3000-r0-32x40G.config.bcm", "td2-m3000-r1-32x40G.config.bcm", "/etc/bcm/"]
-
 COPY ["supervisord.conf", "/etc/supervisor/conf.d/"]
 COPY ["files/supervisor-proc-exit-listener", "/usr/bin"]
 COPY ["critical_processes", "/etc/supervisor/"]
