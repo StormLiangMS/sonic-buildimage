@@ -372,12 +372,6 @@ sudo cp $IMAGE_CONFIGS/process-reboot-cause/process-reboot-cause.service $FILESY
 echo "process-reboot-cause.service" | sudo tee -a $GENERATED_SERVICE_FILE
 sudo cp $IMAGE_CONFIGS/process-reboot-cause/process-reboot-cause $FILESYSTEM_ROOT/usr/bin/
 
-# Copy directed_bcastd script and enable service
-sudo cp $IMAGE_CONFIGS/directed_bcastd/directed-bcastd.service  $FILESYSTEM_ROOT/etc/systemd/system/
-sudo LANG=C chroot $FILESYSTEM_ROOT systemctl enable directed-bcastd.service
-sudo cp $IMAGE_CONFIGS/directed_bcastd/directed_bcastd $FILESYSTEM_ROOT/usr/bin/
-sudo cp $IMAGE_CONFIGS/directed_bcastd/directed_bcastd.sh $FILESYSTEM_ROOT/usr/bin/
-
 ## Install package without starting service
 ## ref: https://wiki.debian.org/chroot
 sudo tee -a $FILESYSTEM_ROOT/usr/sbin/policy-rc.d > /dev/null <<EOF
