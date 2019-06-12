@@ -12,7 +12,7 @@ diff --git a/orchagent/bufferorch.cpp b/orchagent/bufferorch.cpp
 index ef77aa8..c399b17 100644
 --- a/orchagent/bufferorch.cpp
 +++ b/orchagent/bufferorch.cpp
-@@ -340,6 +340,25 @@ task_process_status BufferOrch::processBufferProfile(Consumer &consumer)
+@@ -330,6 +330,25 @@ task_process_status BufferOrch::processBufferProfile(Consumer &consumer)
          if (SAI_NULL_OBJECT_ID != sai_object)
          {
              SWSS_LOG_DEBUG("Modifying existing sai object:%lx ", sai_object);
