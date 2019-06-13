@@ -12,7 +12,7 @@ diff --git a/scripts/fast-reboot b/scripts/fast-reboot
 index 21d153e..5d1c6db 100755
 --- a/scripts/fast-reboot
 +++ b/scripts/fast-reboot
-@@ -103,6 +103,19 @@ then
+@@ -301,6 +301,19 @@ then
          ;;
  esac
  
@@ -29,9 +29,9 @@ index 21d153e..5d1c6db 100755
 +    ;;
 +esac
 +
- # Unload the previously loaded kernel if any loaded
- if [ "$(cat /sys/kernel/kexec_loaded)" -eq 1 ]
- then
+ unload_kernel
+ 
+ setup_reboot_variables
 -- 
 2.14.1
 
