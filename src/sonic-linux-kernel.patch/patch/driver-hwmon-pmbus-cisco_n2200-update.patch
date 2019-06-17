@@ -1,0 +1,45 @@
+Ignore PMBUS read for PMBUS_OT_WARN_LIMIT and PMBUS_POUT_OP_WARN_LIMIT
+
+From: Mike Tsai (Fruit Ninja) <miktsai@cisco.com>
+
+Doing SMBUS word read on these two PMBUS registers (0x51 and 0x6A) can
+cause i801 adapter to lock up on certain Cisco P/S. The i801
+controller will return DEV_ERR in SMB Host Status register and not
+able to recover.
+
+The model for the problematic power supply is:
+S/N: COUPAF1BAB. V02 China made
+
+We will ignore its values for now as a workaround. This also implies
+that sensors output will two fewer fields under which are:
+
+"max" under pout
+"crit low" from temp1
+
+HW firmware update has been submitted, but we will include the software
+workaround for the existing P/S.
+
+Signed-off-by: Mike Tsai (Fruit Ninja) <miktsai@cisco.com>
+---
+ drivers/hwmon/pmbus/cisco_n2200.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/drivers/hwmon/pmbus/cisco_n2200.c b/drivers/hwmon/pmbus/cisco_n2200.c
+index 7a13c08..cc6c08f 100644
+--- a/drivers/hwmon/pmbus/cisco_n2200.c
++++ b/drivers/hwmon/pmbus/cisco_n2200.c
+@@ -147,6 +147,14 @@ static int cisco_n2200_read_word_data(struct i2c_client *client,
+ 		rval = _reg2data_linear(info, ldata);
+ 		dval = _data2reg_direct(info, rval, PSC_CURRENT_OUT);
+ 		return dval;
++	/*
++	 * These two PMBUS registers can cause i2c bus hang intermittently
++	 * on specific Cisco P/S (COUPAF1BAB. V02 China made).
++	 * Ignore the values for now.
++	 */
++	case PMBUS_OT_WARN_LIMIT:
++	case PMBUS_POUT_OP_WARN_LIMIT:
++		return -1;
+ 	default:
+ 		break;
+ 	}

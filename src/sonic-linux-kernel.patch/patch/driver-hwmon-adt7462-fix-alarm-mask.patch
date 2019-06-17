@@ -1,0 +1,33 @@
+Fix Back (D3) temp sensor alarm never turned on
+
+From: Zuwei Liu <zuwliu@cisco.com>
+
+The D3 temp sensor alarm (/sys/bus/i2c/devices/1-0058/temp4_alarm) can
+never be turned on even when the temp4_max is lower than the current
+temperature.
+
+This is due to the temp4 index is defined as 0x10, but the
+ADT7462_ALARM_FLAG_MASK is defined as 0x0F, so the mask for temp4 become
+0x00 (mask = attr->index & ADT7462_ALARM_FLAG_MASK), which cause the temp4
+alarm will never be set.
+
+The fix is to define the ADT7462_ALARM_FLAG_MASK to be 0x1F
+
+Signed-off-by: Zuwei Liu <zuwliu@cisco.com>
+---
+ drivers/hwmon/adt7462.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/hwmon/adt7462.c b/drivers/hwmon/adt7462.c
+index 562cc38..1aafad2 100644
+--- a/drivers/hwmon/adt7462.c
++++ b/drivers/hwmon/adt7462.c
+@@ -131,7 +131,7 @@ static const unsigned short normal_i2c[] = { 0x58, 0x5C, I2C_CLIENT_END };
+ #define ADT7462_ALARM3				0x0200
+ #define ADT7462_ALARM4				0x0300
+ #define ADT7462_ALARM_REG_SHIFT			8
+-#define ADT7462_ALARM_FLAG_MASK			0x0F
++#define ADT7462_ALARM_FLAG_MASK			0x1F
+ 
+ #define ADT7462_TEMP_COUNT		4
+ #define ADT7462_TEMP_REG(x)		(ADT7462_REG_TEMP_BASE_ADDR + ((x) * 2))

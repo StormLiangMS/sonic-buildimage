@@ -1,0 +1,23 @@
+change address_space to 256
+
+From: Mike Tsai (Fruit Ninja) <miktsai@cisco.com>
+
+So the additional info stored after the firmware data can be retrieved.
+This is where NXOS store bootloader variables
+---
+ drivers/rtc/rtc-cmos.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/rtc/rtc-cmos.c b/drivers/rtc/rtc-cmos.c
+index 5b2e761..3ea74c8 100644
+--- a/drivers/rtc/rtc-cmos.c
++++ b/drivers/rtc/rtc-cmos.c
+@@ -685,7 +685,7 @@ cmos_do_probe(struct device *dev, struct resource *ports, int rtc_irq)
+ #elif defined(__i386__) || defined(__x86_64__) || defined(__arm__) \
+ 			|| defined(__sparc__) || defined(__mips__) \
+ 			|| defined(__powerpc__)
+-	address_space = 128;
++	address_space = 256;
+ #else
+ #warning Assuming 128 bytes of RTC+NVRAM address space, not 64 bytes.
+ 	address_space = 128;
