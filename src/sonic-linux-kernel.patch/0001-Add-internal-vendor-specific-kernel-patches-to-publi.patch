@@ -99,13 +99,13 @@ index 0000000..1739840
 +../../sonic-linux-kernel.patch/patch/include-asm-generic-gpio-ARCH_NR_GPIOs-1024.patch
 \ No newline at end of file
 diff --git a/patch/series b/patch/series
-index f0062ff..50599ae 100644
+index 9b681ae..9c704f2 100755
 --- a/patch/series
 +++ b/patch/series
-@@ -75,6 +75,15 @@ linux-4.13-thermal-intel_pch_thermal-Fix-enable-check-on.patch
- 0037-mlxsw-Align-code-with-kernel-v-5.1.patch
- 0038-mlxsw-core-Add-check-for-split-port-during-thermal-z.patch
- 0039-mlxsw-core-Prevent-reading-unsupported-slave-address.patch
+@@ -77,6 +77,15 @@ linux-4.13-thermal-intel_pch_thermal-Fix-enable-check-on.patch
+ 0040-mlxsw-core-add-support-for-Gear-Box-temperatures-in-.patch
+ 0041-mlxsw-minimal-Provide-optimization-for-I2C-bus-acces.patch
+ linux-4.16-firmware-dmi-handle-missing-DMI-data-gracefully.patch
 +config-cisco-n3132-gx.patch
 +config-cisco-n9200.patch
 +driver-hwmon-adt7462-fix-alarm-mask.patch
