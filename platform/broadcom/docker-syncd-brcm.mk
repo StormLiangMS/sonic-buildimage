@@ -9,7 +9,8 @@ $(DOCKER_SYNCD_BASE)_FILES += $(DSSERVE) $(BCMCMD)
 $(DOCKER_SYNCD_BASE)_DBG_DEPENDS += $(SYNCD_DBG) \
                                 $(LIBSWSSCOMMON_DBG) \
                                 $(LIBSAIMETADATA_DBG) \
-                                $(LIBSAIREDIS_DBG)
+                                $(LIBSAIREDIS_DBG) \
+                                $(BRCM_SAI_DBG)
 
 $(DOCKER_SYNCD_BASE)_RUN_OPT += -v /host/warmboot:/var/warmboot
 
