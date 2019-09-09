@@ -13,6 +13,7 @@ include $(PLATFORM_PATH)/platform-modules-quanta.mk
 include $(PLATFORM_PATH)/platform-modules-juniper.mk
 include $(PLATFORM_PATH)/platform-modules-brcm-xlr-gts.mk
 include $(PLATFORM_PATH)/platform-modules-n3132.mk
+include $(PLATFORM_PATH)/platform-modules-n9200.mk
 include $(PLATFORM_PATH)/docker-syncd-brcm.mk
 include $(PLATFORM_PATH)/docker-syncd-brcm-rpc.mk
 include $(PLATFORM_PATH)/docker-saiserver-brcm.mk

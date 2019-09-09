@@ -1,2 +1,4 @@
-0001-Add-internal-vendor-specific-kernel-patches-to-publi.patch
-0002-Add-driver-hwmon-pmbus-cisco_n2200-update2.patch
+0001-sonic-linux-kernel-new-patch-files-upto-cisco-4.3.patch
+0002-config-patch-for-n3132.patch
+0003-config-patch-for-n9200.patch
+0004-change-to-patch-series-file-upto-cisco-4.3.patch
