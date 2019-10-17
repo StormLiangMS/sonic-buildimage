@@ -1,4 +1,11 @@
-{%- set default_cable = '5m' %}
+{%- set default_cable = '300m' %}
+
+{%- set ports2cable = {
+        'torrouter_server'       : '300m',
+        'leafrouter_torrouter'   : '300m',
+        'spinerouter_leafrouter' : '300m'
+        }
+-%}
 
 {%- macro generate_port_lists(PORT_ALL) %}
     {# Generate list of ports #}
