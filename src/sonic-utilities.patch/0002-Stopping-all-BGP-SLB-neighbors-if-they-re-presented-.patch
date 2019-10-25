@@ -1,37 +1,39 @@
-From 26cf230be69b144bbfaf40a1ca6fd377c154c344 Mon Sep 17 00:00:00 2001
+From 17df71bafe9ae587ca49bc40204babfe9fa4a062 Mon Sep 17 00:00:00 2001
 From: Pavel Shirshov <pavelsh@microsoft.com>
-Date: Wed, 22 Nov 2017 20:46:03 +0000
-Subject: [PATCH] Stopping all BGP SLB neighbors if they're presented before
- FastReboot procedure
+Date: Thu, 24 Oct 2019 17:20:16 -0700
+Subject: [PATCH 1/1] Stopping all BGP SLB neighbors if they're presented  
+ before FastReboot procedure.
 
 ---
- scripts/fast-reboot | 13 ++++++++++++
- 1 file changed, 13 insertions(+)
+ scripts/fast-reboot | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
 diff --git a/scripts/fast-reboot b/scripts/fast-reboot
-index 21d153e..5d1c6db 100755
+index c14b3c5..582e19c 100755
 --- a/scripts/fast-reboot
 +++ b/scripts/fast-reboot
-@@ -301,6 +301,19 @@ then
+@@ -301,6 +301,21 @@ case "$REBOOT_TYPE" in
          ;;
  esac
  
 +# Stopping all SLB neighbors if they're presented
-+PASSIVE_BGP_NEIGHBORS=$(sonic-cfggen -m /etc/sonic/minigraph.xml -v "BGP_PEER_RANGE | list")
-+case "$PASSIVE_BGP_NEIGHBORS" in
-+  *BGPSLBPassive*)
-+    ASN=$(sonic-cfggen -m /etc/sonic/minigraph.xml -v "DEVICE_METADATA['localhost']['bgp_asn']")
-+    SLBNAME=$(sonic-cfggen -m /etc/sonic/minigraph.xml -v "BGP_PEER_RANGE['BGPSLBPassive']['name']")
-+    vtysh -e "configure terminal" -e "router bgp ${ASN}" -e "neighbor ${SLBNAME} shutdown"
-+    sleep 1
-+    ;;
-+  *)
-+    ;;
-+esac
++if [[ "$REBOOT_TYPE" = "fast-reboot" ]]; then
++    debug "Stopping all SLB neighbors if they are presented"
++    PASSIVE_BGP_NEIGHBORS=$(sonic-cfggen -d -v "BGP_PEER_RANGE | list")
++    case "$PASSIVE_BGP_NEIGHBORS" in
++        *BGPSLBPassive*)
++        ASN=$(sonic-cfggen -d -v "DEVICE_METADATA['localhost']['bgp_asn']")
++        vtysh -c "configure terminal" -c "router bgp ${ASN}" -c "neighbor BGPSLBPassive shutdown"
++        sleep 30 # wait for 30 seconds - BGP RouteAdv default timer
++        ;;
++    *)
++        ;;
++    esac
++fi
 +
  unload_kernel
  
  setup_reboot_variables
 -- 
-2.14.1
+2.17.1.windows.2
 
