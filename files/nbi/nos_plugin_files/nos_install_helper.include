@@ -1,0 +1,347 @@
+#!/bin/bash
+#
+#      File: nos_install_helper.include
+#
+#      Description:
+#      Provides a collection of helper routines to install NOS image
+#
+
+#
+# NX-OS installer could use a specific return code
+# identify the NOS installer failure
+# Note: NX-OS installer will use the same error code
+#
+NOS_INSTALL_EXIT_SUCCESS=0
+NOS_INSTALL_MD5_FAILED=101
+NOS_INSTALL_VERSION_FAILED=102
+NOS_INSTALL_GENERAL_FAILED=103
+NOS_INSTALL_GRUB_UPD_FAILED=104
+NOS_INSTALL_KEXEC_LD_FAILED=105
+NOS_INSTALL_KEXEC_RUN_FAILED=106
+NOS_INSTALL_PARAMETER_FAILED=107
+NOS_INSTALL_FILE_FAILED=108
+NOS_INSTALL_DIRECTORY_FAILED=109
+NOS_KICKSTART_PARAMETER_FAILED=110
+NOS_KICKSTART_FILE_FAILED=111
+
+NBI_FS_ARCHIVE=nbi-fs.zip
+NBI_KS_NAME=sonic-nbi-cisco.ks
+FILESYSTEM_DOCKERFS=dockerfs.tar.gz
+FILESYSTEM_SQUASHFS=fs.squashfs
+DOCKERFS_DIR=docker
+
+NOS_VERSION=%%IMAGE_VERSION%%
+
+
+#
+# Function to verify the NOS image is a install image
+#    Param:
+#          NOS_IMAGE - "/bootflash/sonic-nbi-cisco.bin" 
+#
+function nos_is_install_image ()
+{
+    local NOS_IMAGE=$1
+
+    # 4th segment is sro
+    /isanboot/bin/x_nbi_seg $NOS_IMAGE stdout 4 | strings | grep swid-sonic-install
+
+    if [ $? -eq 0 ]; then
+        return $NOS_INSTALL_EXIT_SUCCESS
+    else
+        return $NOS_INSTALL_FILE_FAILED
+    fi
+}
+
+#
+# Function to verify the NOS image is a kickstart image
+#    Param:
+#          NOS_IMAGE - "/bootflash/sonic-nbi-cisco.ks" 
+#
+function nos_is_run_image ()
+{
+    local NOS_IMAGE=$1
+
+    # 4th segment is sro
+    /isanboot/bin/x_nbi_seg $NOS_IMAGE stdout 4 | strings | grep swid-sonic-run
+
+    if [ $? -eq 0 ]; then
+        return $NOS_INSTALL_EXIT_SUCCESS
+    else
+        return $NOS_KICKSTART_FILE_FAILED
+    fi
+}
+
+#
+# Function to verify the NOS image
+#    Param:
+#          NOS_IMAGE - "/bootflash/sonic.nbi" 
+#
+function nos_install_md5_check ()
+{
+    local NOS_IMAGE=$1
+
+    # check if it is a valid image
+
+    return $NOS_INSTALL_EXIT_SUCCESS
+}
+
+#
+# Function to verify NOS image compatibility to running NX-OS image
+#    Param:
+#          NOS_IMAGE - "/bootflash/sonic.nbi" 
+#
+function nos_install_ver_check ()
+{
+    local NOS_IMAGE=$1
+
+    # check if it is a valid image
+    RUN_VER=`/isan/bin/imghdr release /var/run/curr-ks.hdr | head -n1`
+    grep $RUN_VER $NOS_IPLUGIN_PATH/nos_version_compat_list.txt
+    # no need to check for now
+    return $NOS_INSTALL_EXIT_SUCCESS
+
+    if [ $? -eq 0 ]; then
+        return $NOS_INSTALL_EXIT_SUCCESS
+    fi
+
+    return $NOS_INSTALL_VERSION_FAILED
+}
+
+function nos_run_image_path ()
+{
+    local NOS_IMAGE=$1
+
+    # no need to derive from install image
+    echo "/image-%%IMAGE_VERSION%%/$NBI_KS_NAME"
+}
+
+#
+# Function to record grub boot info
+#    Param:
+#          NOS_IMAGE - "/bootflash/sonic.nbi" 
+#          GRUBINFO_PATH - "/nxos/tmp/" 
+#
+# this script will update grub info under /nxos/tmp/NETWORK_OS_BOOT_CONF.txt
+#
+function nos_update_grub_conf ()
+{
+    local NOS_IMAGE=$1
+    local GRUBINFO_PATH=$2
+
+    SONIC_BOOT_IMAGE=$(nos_run_image_path $NOS_IMAGE)
+    /bin/rm -rf $GRUBINFO_PATH"/NETWORK_OS_BOOT_CONF.txt"
+    echo $SONIC_BOOT_IMAGE > $GRUBINFO_PATH"/NETWORK_OS_BOOT_CONF.txt"
+
+    return $NOS_INSTALL_EXIT_SUCCESS
+}
+
+function nos_get_platform ()
+{
+    local PID=$(/isan/bin/vsh -c "show sprom sup" | grep "Product Number  :" | awk '{print $4}')
+    case "$PID" in
+        N9K-C9232C)
+            echo "x86_64-cisco_N9K_C9232C"
+            ;;
+        N9K-C92304QC)
+            echo "x86_64-cisco_N9K_C92304QC"
+            ;;
+        N9K-C9336C-FX)
+            echo "x86_64-cisco_N9K_C9336CFX"
+            ;;
+        N9K-C9336C-FX2)
+            echo "x86_64-cisco_N9K_C9336CFX"
+            ;;
+        N9K-C9364C)
+            echo "x86_64-cisco_N9K_C9364C"
+            ;;
+        *)
+            echo "x86_64-n9200-r0"
+            ;;
+    esac
+
+    return $NOS_INSTALL_EXIT_SUCCESS
+}
+
+function nos_get_console_speed ()
+{
+    local SPEED=$(/isan/bin/vsh -c "show line console" | grep Speed: | awk '{print $2}')
+    local BIT=$(/isan/bin/vsh -c "show line console" | grep Databits: | awk '{print $2}')
+    local PARITY=$(/isan/bin/vsh -c "show line console" | grep Parity: | awk '{print $2}')
+    local P="n"
+    case "$PARITY" in
+        none)
+            P="n"
+            ;;
+        even)
+            P="e"
+            ;;
+        odd)
+            P="e"
+            ;;
+        *)
+            P="n"
+            ;;
+    esac
+    echo "console=ttyS0,$SPEED$P$BIT"nn
+
+    return $NOS_INSTALL_EXIT_SUCCESS
+}
+
+function nos_get_acpi_rsdp ()
+{
+
+    for dir in /sys/firmware/memmap/* ; do
+        mem_type="$(cat $dir/type)"
+        if [ "$mem_type" = "ACPI Tables" ] ; then
+            rsdp_start="$(cat $dir/start)"
+            echo "acpi_rsdp=$rsdp_start"
+            return $NOS_INSTALL_EXIT_SUCCESS
+        fi
+    done
+
+    echo ""
+    return $NOS_INSTALL_GENERAL_FAILED
+}
+
+function nos_install_image ()
+{
+    local NOS_IMAGE=$1
+
+    # run nos install scripts
+    if [ -z "$NOS_IMAGE" ] ; then
+        return $NOS_INSTALL_PARAMETER_FAILED
+    fi
+
+    if [ ! -f "$NOS_IMAGE" ] ; then
+        return $NOS_INSTALL_FILE_FAILED
+    fi
+
+    #if the image is sonic run image, do not do anything
+    nos_is_run_image $NOS_IMAGE
+    if [ $? -eq $NOS_INSTALL_EXIT_SUCCESS ] ; then
+        return $NOS_INSTALL_EXIT_SUCCESS
+    fi
+
+    #if the image is not sonic install image, return error
+    nos_is_install_image $NOS_IMAGE
+    if [ $? != $NOS_INSTALL_EXIT_SUCCESS ] ; then
+        return $NOS_INSTALL_FILE_FAILED
+    fi
+
+    #make EXTRACT_DIR on /bootflash
+    EXTRACT_DIR=$(/bin/mktemp -d /bootflash/fastboot.XXXXXXX)
+    cd $EXTRACT_DIR
+
+    # 3nd segment is cpio gzip
+    /isanboot/bin/x_nbi_seg $NOS_IMAGE stdout 3 | /bin/gzip -cd | /bin/cpio -idm $NBI_FS_ARCHIVE
+    if [ ! -f $NBI_FS_ARCHIVE ] ; then
+        cd /bootflash/
+        /bin/rm -rf $EXTRACT_DIR
+        return $NOS_INSTALL_FILE_FAILED
+    fi
+    
+    # Remove old files
+    cd /bootflash/
+    /bin/rm -f machine.conf
+    /bin/rm -fr image-%%IMAGE_VERSION%%
+
+    # Install new files
+    /usr/bin/unzip $EXTRACT_DIR/$NBI_FS_ARCHIVE
+    
+    /bin/rm -rf $EXTRACT_DIR
+    
+    if [ ! -f machine.conf ] ; then
+        return $NOS_INSTALL_FILE_FAILED
+    fi
+    
+    # Fill in the CISCO_PLATFORM value
+    local CISCO_PLATFORM=$(nos_get_platform)
+    sed -i -e "s/%%CISCO_PLATFORM%%/$CISCO_PLATFORM/g" machine.conf
+
+    if [ ! -d /bootflash/image-%%IMAGE_VERSION%% ] ; then
+        return $NOS_INSTALL_DIRECTORY_FAILED
+    fi
+    cd /bootflash/image-%%IMAGE_VERSION%%
+    if [ -f $FILESYSTEM_DOCKERFS ]; then
+        mkdir -p $DOCKERFS_DIR && tar --numeric-owner -xf $FILESYSTEM_DOCKERFS -C $DOCKERFS_DIR
+        /bin/rm -f $FILESYSTEM_DOCKERFS
+    else
+        return $NOS_INSTALL_FILE_FAILED
+    fi
+    
+    if [ ! -f $FILESYSTEM_SQUASHFS ] ; then
+        return $NOS_INSTALL_FILE_FAILED
+    fi
+    
+    if [ ! -f "$NBI_KS_NAME" ] ; then
+        return $NOS_INSTALL_FILE_FAILED
+    fi
+    
+    cd /bootflash/
+    /bin/rm -f $NBI_KS_NAME
+    /bin/ln image-%%IMAGE_VERSION%%/$NBI_KS_NAME $NBI_KS_NAME
+
+    return $NOS_INSTALL_EXIT_SUCCESS
+}
+
+function nos_install_kexec_load ()
+{
+    local NOS_IMAGE=$1
+
+    # run nos install scripts
+    if [ -z "$NOS_IMAGE" ] ; then
+        return $NOS_KICKSTART_PARAMETER_FAILED
+    fi
+
+    if [ ! -f "$NOS_IMAGE" ] ; then
+        return $NOS_KICKSTART_FILE_FAILED
+    fi
+
+    #make EXTRACT_DIR on /bootflash
+    EXTRACT_DIR=$(/bin/mktemp -d /bootflash/fastboot.XXXXXXX)
+    cd $EXTRACT_DIR
+
+    # 1st segment is cmdline
+    /isanboot/bin/x_nbi_seg $NOS_IMAGE ./cmdline 1
+    # 2nd segment is bzImage
+    /isanboot/bin/x_nbi_seg $NOS_IMAGE ./bzImage 2
+    # 3rd segment is initrd
+    /isanboot/bin/x_nbi_seg $NOS_IMAGE ./initrd.gz 3
+    
+    # Replace ksimg with new URI
+    local CMDLINE=`strings ./cmdline`
+    local IMGDIR=$(echo $CMDLINE | sed -n "s/.*loop=\(.*\)\/fs.squashfs.*/\1/p")
+    local KSIMG="ksimg=bootflash://$IMGDIR/sonic-nbi-cisco.ks"
+    local CRDIDX=$(cat /proc/cmdline | sed -n "s/.*\(card_index=[0-9]*\).*/\1/p")
+    local CONSOLE_SPEED=$(nos_get_console_speed)
+    local MPAIDX=$(cat /proc/cmdline | sed -n "s/.*\(mpa_index=[0-9]*\).*/\1/p")
+    ACPI_RSDP=$(nos_get_acpi_rsdp)
+    CMDLINE="$CONSOLE_SPEED $CRDIDX $MPAIDX $KSIMG $CMDLINE fastboot=1 noefi $ACPI_RSDP" #Append fastreboot
+    
+    NOS_KEXEC_BIN=$NOS_IPLUGIN_PATH/nos_kexec
+    # Load the kernel and initrd
+    echo $NOS_KEXEC_BIN -l ./bzImage --initrd=./initrd.gz --command-line="$CMDLINE"
+    $NOS_KEXEC_BIN -l ./bzImage --initrd=./initrd.gz --command-line="$CMDLINE"
+    
+    cd /bootflash
+    /bin/rm -rf $EXTRACT_DIR
+
+    if [ $? -eq 0 ]; then
+        return $NOS_INSTALL_EXIT_SUCCESS
+    fi
+
+    return $NOS_INSTALL_KEXEC_LD_FAILED
+}
+
+function nos_install_kexec_run ()
+{
+    NOS_KEXEC_BIN=$NOS_IPLUGIN_PATH/nos_kexec
+    $NOS_KEXEC_BIN -e
+    #TODO_NOS: remove the below line
+    #/sbin/kexec -e
+    if [ $? -eq 0 ]; then
+        return $NOS_INSTALL_EXIT_SUCCESS
+    fi
+
+    return $NOS_INSTALL_KEXEC_RUN_FAILED
+}

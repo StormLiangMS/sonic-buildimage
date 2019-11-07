@@ -1,0 +1,25 @@
+From 2d177934001b292f824aa4aab2529e2e152c64c5 Mon Sep 17 00:00:00 2001
+From: Jiahua Wang <jiahwang@cisco.com>
+Date: Tue, 2 Apr 2019 16:52:00 -0700
+Subject: [PATCH] Print FAILED! when run command failed
+
+Signed-off-by: Jiahua Wang <jiahwang@cisco.com>
+---
+ sonic_installer/main.py | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sonic_installer/main.py b/sonic_installer/main.py
+index e19ad17..f56e2c4 100644
+--- a/sonic_installer/main.py
++++ b/sonic_installer/main.py
+@@ -180,6 +180,7 @@ def run_command_output(command):
+     click.echo(out)
+ 
+     if proc.returncode != 0:
++        click.echo(click.style("FAILED!", fg='red'))
+         sys.exit(proc.returncode)
+ 
+     return out
+-- 
+2.7.4
+

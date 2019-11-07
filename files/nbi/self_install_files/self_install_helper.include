@@ -1,0 +1,209 @@
+#!/bin/bash
+#
+#      File: self_install_helper.include
+#
+#      Description:
+#      Provides a collection of helper routines to install NOS image
+#
+
+#
+# NX-OS installer could use a specific return code
+# identify the NOS installer failure
+# Note: NX-OS installer will use the same error code
+#
+NOS_INSTALL_EXIT_SUCCESS=0
+NOS_INSTALL_MD5_FAILED=101
+NOS_INSTALL_VERSION_FAILED=102
+NOS_INSTALL_GENERAL_FAILED=103
+NOS_INSTALL_GRUB_UPD_FAILED=104
+NOS_INSTALL_KEXEC_LD_FAILED=105
+NOS_INSTALL_KEXEC_RUN_FAILED=106
+NOS_INSTALL_PARAMETER_FAILED=107
+NOS_INSTALL_FILE_FAILED=108
+NOS_INSTALL_DIRECTORY_FAILED=109
+NOS_KICKSTART_PARAMETER_FAILED=110
+NOS_KICKSTART_FILE_FAILED=111
+
+NBI_FS_ARCHIVE=nbi-fs.zip
+NBI_KS_NAME=sonic-nbi-cisco.ks
+FILESYSTEM_DOCKERFS=dockerfs.tar.gz
+FILESYSTEM_SQUASHFS=fs.squashfs
+DOCKERFS_DIR=docker
+
+NOS_VERSION=%%IMAGE_VERSION%%
+
+
+function nos_run_image_path ()
+{
+    # no need to derive from install image
+    echo "image-%%IMAGE_VERSION%%/$NBI_KS_NAME"
+}
+
+function nos_get_platform ()
+{
+    local PID=$(pfm_util -p | grep PID | awk '{print $3}')
+    case "$PID" in
+        N9K-C9232C)
+            echo "x86_64-cisco_N9K_C9232C"
+            ;;
+        N9K-C92304QC)
+            echo "x86_64-cisco_N9K_C92304QC"
+            ;;
+        N9K-C9336C-FX)
+            echo "x86_64-cisco_N9K_C9336CFX"
+            ;;
+        N9K-C9336C-FX2)
+            echo "x86_64-cisco_N9K_C9336CFX"
+            ;;
+        N9K-C9364C)
+            echo "x86_64-cisco_N9K_C9364C"
+            ;;
+        N3K-C34180YC)
+            echo "x86_64-n34180yc-r0"
+            ;;
+        N3K-C34180YC-OE)
+            echo "x86_64-n34180yc-r0"
+            ;;
+        N3K-C3464C)
+            echo "x86_64-n3464c-r0"
+            ;;
+        N3K-C3464C-OE)
+            echo "x86_64-n3464c-r0"
+            ;;
+        N3K-C3132Q-40GE)
+            echo "x86_64-m3000-r0"
+            ;;
+        N3K-C3132Q-OE)
+            echo "x86_64-m3000-r0"
+            ;;
+        N3K-C3132Q-40GX)
+            echo "x86_64-m3000-r1"
+            ;;
+        N3K-C3132Q-X-OE)
+            echo "x86_64-m3000-r1"
+            ;;
+        *)
+            echo "x86_64-n9200-r0"
+            ;;
+    esac
+
+    return $NOS_INSTALL_EXIT_SUCCESS
+}
+
+function nos_get_platform_type()
+{
+    local PID=$(pfm_util -p | grep PID | awk '{print $3}')
+    case "$PID" in
+        N9K-C9232C |\
+        N9K-C92304QC |\
+        N9K-C9336C-FX |\
+        N9K-C9336C-FX2 |\
+        N9K-C9364C |\
+        N3K-C34180YC | N3K-C34180YC-OE |\
+        N3K-C3464C | N3K-C3464C-OE)
+            echo "N9k"
+            ;;
+        N3K-C3132Q-40GE | N3K-C3132Q-OE |\
+        N3K-C3132Q-40GX | N3K-C3132Q-X-OE)
+            echo "N3k"
+            ;;
+        *)
+            return $NOS_INSTALL_GENERAL_FAILED
+            ;;
+    esac
+
+    return $NOS_INSTALL_EXIT_SUCCESS
+}
+
+function nos_install_image ()
+{
+    if [ ! -f /$NBI_FS_ARCHIVE ] ; then
+        return $NOS_INSTALL_FILE_FAILED
+    fi
+
+    # Remove old files
+    cd /bootflash/
+    /bin/rm -fr machine.conf
+    /bin/rm -fr image-%%IMAGE_VERSION%%
+
+    # Install new files
+    /usr/bin/unzip /$NBI_FS_ARCHIVE
+
+    if [ ! -f machine.conf ] ; then
+        return $NOS_INSTALL_FILE_FAILED
+    fi
+
+    # Fill in the CISCO_PLATFORM value
+    local CISCO_PLATFORM=$(nos_get_platform)
+    sed -i -e "s/%%CISCO_PLATFORM%%/$CISCO_PLATFORM/g" machine.conf
+
+    if [ ! -d /bootflash/image-%%IMAGE_VERSION%% ] ; then
+        return $NOS_INSTALL_DIRECTORY_FAILED
+    fi
+    cd /bootflash/image-%%IMAGE_VERSION%%
+    if [ -f $FILESYSTEM_DOCKERFS ]; then
+        mkdir -p $DOCKERFS_DIR && tar --numeric-owner -xf $FILESYSTEM_DOCKERFS -C $DOCKERFS_DIR > /dev/null 2>&1
+        /bin/rm -f $FILESYSTEM_DOCKERFS
+    else
+        return $NOS_INSTALL_FILE_FAILED
+    fi
+
+    if [ ! -f $FILESYSTEM_SQUASHFS ] ; then
+        return $NOS_INSTALL_FILE_FAILED
+    fi
+
+    if [ ! -f "$NBI_KS_NAME" ] ; then
+        return $NOS_INSTALL_FILE_FAILED
+    fi
+
+    cd /bootflash/
+    /bin/rm -f $NBI_KS_NAME
+    /bin/ln image-%%IMAGE_VERSION%%/$NBI_KS_NAME $NBI_KS_NAME
+    cd /
+
+    return $NOS_INSTALL_EXIT_SUCCESS
+}
+
+function get_bootflash_disk_device() {
+    n9k_disks="/sys/devices/pci0000:00/0000:00:1f.2/ata5/host4/target4:0:0/4:0:0:0 \
+               /sys/devices/pci0000:00/0000:00:1f.2/ata2/host1/target1:0:0/1:0:0:0"
+    n3k_disks="/sys/devices/pci0000:00/0000:00:1d.0/usb1/1-1/1-1.1/1-1.1:1.0 \
+               /sys/devices/pci0000:00/0000:00:1d.0/usb2/2-1/2-1.1/2-1.1:1.0 \
+               /sys/devices/pci0000:00/0000:00:1d.0/usb1/1-1/1-1.1/1-1.1.1/1-1.1.1:1.0"
+    for d in /sys/block/sd* ; do
+        if [ -e "$d/device" ] ; then
+            path="$(realpath $d/device)"
+            for p in $n3k_disks; do
+                if echo "$path" | grep -q "$p" ; then
+                    device="/dev/$(basename $d)"
+                    echo $device
+                    return 0
+                fi
+            done
+        fi
+    done
+    return 1
+}
+
+function nos_mount_bootflash ()
+{
+    if [ ! -d /bootflash ] ; then
+        mkdir /bootflash
+    fi
+    local PHYDEV=$(get_bootflash_disk_device)
+    if [ $? -ne 0 ]; then
+        echo "Bootflash disk not found"
+        return $NOS_INSTALL_GENERAL_FAILED
+    fi
+    local DEVSDA3="$PHYDEV"3
+    mount $DEVSDA3 /bootflash
+    return $?
+}
+
+function nos_umount_bootflash ()
+{
+    cd /
+    umount /bootflash
+    return $?
+}
+

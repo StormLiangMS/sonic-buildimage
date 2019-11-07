@@ -1,0 +1,33 @@
+From 2bf87a4e060456e8a5bd51d32a1f0eb49f2d117e Mon Sep 17 00:00:00 2001
+From: Jiahua Wang <jiahwang@cisco.com>
+Date: Tue, 2 Apr 2019 10:55:17 -0700
+Subject: [PATCH] Fix sonic_install set_next_boot for NBI
+
+Signed-off-by: Jiahua Wang <jiahwang@cisco.com>
+---
+ sonic_installer/main.py | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/sonic_installer/main.py b/sonic_installer/main.py
+index 62715cd..e19ad17 100644
+--- a/sonic_installer/main.py
++++ b/sonic_installer/main.py
+@@ -123,6 +123,7 @@ def set_default_image(image):
+     elif get_running_image_type() == IMAGE_TYPE_NBI:
+         image_dir = image.replace(IMAGE_PREFIX, IMAGE_DIR_PREFIX)
+         command = "%s -i \"%s/sonic-nbi-cisco.ks\"" % (NBI_AUTOBOOT_TOOL, image_dir)
++        run_command(command)
+         run_command("rm /host/sonic-nbi-cisco.ks")
+         lnk_cmd = "ln \"/host/%s/sonic-nbi-cisco.ks\" /host/sonic-nbi-cisco.ks" % image_dir
+         run_command(lnk_cmd)
+@@ -447,6 +448,7 @@ def set_next_boot(image):
+     elif get_running_image_type() == IMAGE_TYPE_NBI:
+         image_dir = image.replace(IMAGE_PREFIX, IMAGE_DIR_PREFIX)
+         command = "%s -i \"%s/sonic-nbi-cisco.ks\"" % (NBI_AUTOBOOT_TOOL, image_dir)
++        run_command(command)
+         run_command("rm /host/sonic-nbi-cisco.ks")
+         lnk_cmd = "ln \"/host/%s/sonic-nbi-cisco.ks\" /host/sonic-nbi-cisco.ks" % image_dir
+         run_command(lnk_cmd)
+-- 
+2.7.4
+

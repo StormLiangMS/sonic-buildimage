@@ -1,0 +1,30 @@
+From 70647eb75030d8d87bcd7f496a8a6013754220a3 Mon Sep 17 00:00:00 2001
+From: Jiahua Wang <jiahwang@cisco.com>
+Date: Thu, 28 Feb 2019 11:26:15 -0800
+Subject: [PATCH] get next boot image handles No autoboot case
+
+Signed-off-by: Jiahua Wang <jiahwang@cisco.com>
+---
+ sonic_installer/main.py | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/sonic_installer/main.py b/sonic_installer/main.py
+index f56e2c4..ab7df75 100644
+--- a/sonic_installer/main.py
++++ b/sonic_installer/main.py
+@@ -221,7 +221,11 @@ def get_next_image():
+         config.close()
+     elif get_running_image_type() == IMAGE_TYPE_NBI:
+         command = "%s -c" % (NBI_AUTOBOOT_TOOL)
+-        next_image = re.search("(\S+)/", run_command_output(command)).group(1).replace(IMAGE_DIR_PREFIX, IMAGE_PREFIX)
++        image_output = re.search("(\S+)/", run_command_output(command))
++        if image_output:
++            next_image = image_output.group(1).replace(IMAGE_DIR_PREFIX, IMAGE_PREFIX)
++        else:
++            next_image = "NONE"
+     else:
+         images = get_installed_images()
+         grubenv = subprocess.check_output(["/usr/bin/grub-editenv", HOST_PATH + "/grub/grubenv", "list"])
+-- 
+2.7.4
+
