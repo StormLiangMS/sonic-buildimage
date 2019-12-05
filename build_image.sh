@@ -148,7 +148,7 @@ elif [ "$IMAGE_TYPE" = "nbi" ]; then
     echo "Build NBI installer"
 
     # Download BLOBs from Azure storage
-    IMGHDR_URL="https://sonicstorage.blob.core.windows.net/cisco/nbi/imghdr?sv=2015-04-05&sr=b&sig=JeIdemgLNuTzKd44WM5%2FuoGOoc3dRqvDUQecDZ%2BW8u4%3D&se=2046-08-26T00%3A48%3A30Z&sp=r"
+    IMGHDR_URL="https://sonicstorage.blob.core.windows.net/cisco/nbi/imghdr?sv=2015-04-05&sr=b&sig=%2B41NYO%2FDPp4lesLH20azFI9tFauMFdbfyThAMc6jToY%3D&se=2047-04-22T02%3A48%3A18Z&sp=r"
     INITRD_IMG_URL="https://sonicstorage.blob.core.windows.net/cisco/nbi/initrd.img?sv=2015-04-05&sr=b&sig=%2BB6iFmECwItZ0vlwgXPKvMKH0tQCwfezXkJ%2Bo9ZgnAY%3D&se=2046-08-26T00%3A50%3A12Z&sp=r"
     NOS_KEXEC_URL="https://sonicstorage.blob.core.windows.net/cisco/nbi/nos_kexec?sv=2015-04-05&sr=b&sig=JkKGZZV5sDN3Xps5wcjgiOVQNTNkyaEqfO4%2BvATIffE%3D&se=2046-08-26T00%3A51%3A12Z&sp=r"
     SONIC_INSTALL_SEG4_URL="https://sonicstorage.blob.core.windows.net/cisco/nbi/sonic-install.seg4?sv=2015-04-05&sr=b&sig=bCaI4qH3A6%2BLm7vAqisMQSgU6m4oytGsNbn9jq2ZVpM%3D&se=2046-08-26T00%3A55%3A13Z&sp=r"
@@ -229,8 +229,8 @@ elif [ "$IMAGE_TYPE" = "nbi" ]; then
     cp ../files/nbi/self_install_files/* usr/local/install/
     chmod +x usr/local/install/*
     mkdir -p sonic_installer_scripts
-    #cp ../files/nbi/sonic-nbi-install.sh sonic_installer_scripts/
-    #chmod +x sonic_installer_scripts/*
+    cp ../fsroot/usr/local/bin/sonic-nbi-install.sh sonic_installer_scripts/
+    chmod +x sonic_installer_scripts/*
     sed -i -e "s/%%IMAGE_VERSION%%/$IMAGE_VERSION/g" usr/local/install/self_install_helper.include
     [ "$(id -ru)" != 0 ] && cpio_owner_root="-R 0:0"
     find . | cpio --quiet $cpio_owner_root -o -H newc | gzip > ../nbi-install-initrd.img

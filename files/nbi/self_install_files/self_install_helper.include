@@ -142,8 +142,18 @@ function nos_install_image ()
     fi
     cd /bootflash/image-%%IMAGE_VERSION%%
     if [ -f $FILESYSTEM_DOCKERFS ]; then
-        mkdir -p $DOCKERFS_DIR && tar --numeric-owner -xf $FILESYSTEM_DOCKERFS -C $DOCKERFS_DIR > /dev/null 2>&1
-        /bin/rm -f $FILESYSTEM_DOCKERFS
+        local CISCO_PLATFORM=$(nos_get_platform)
+        case "$CISCO_PLATFORM" in
+            x86_64-m3000-r0)
+                ;;
+            *)
+                mkdir -p $DOCKERFS_DIR && tar --numeric-owner -xf $FILESYSTEM_DOCKERFS -C $DOCKERFS_DIR > /dev/null 2>&1
+                if [ $? -ne 0 ] ; then
+                    return $NOS_INSTALL_FILE_FAILED
+                fi
+                /bin/rm -f $FILESYSTEM_DOCKERFS
+                ;;
+        esac
     else
         return $NOS_INSTALL_FILE_FAILED
     fi

@@ -11,7 +11,7 @@ $(CISCO_N3132_PLATFORM_MODULE)_PLATFORM = x86_64-m3000-r0 x86_64-m3000-r1
 SONIC_DPKG_DEBS += $(CISCO_N3132_PLATFORM_MODULE)
 
 CISCO_NBI_PACKAGE = cisco-nbi-package_1.0_amd64.deb
-$(CISCO_NBI_PACKAGE)_URL = "https://sonicstorage.blob.core.windows.net/cisco/debian/cisco-nbi-package_1.0_amd64.deb?sv=2015-04-05&sr=b&sig=Gwr0imXcLziqTY3Ai%2FHKVIOLSI7n%2BYQ2biF3mEVaaIg%3D&se=2046-09-07T17%3A33%3A47Z&sp=r"
+$(CISCO_NBI_PACKAGE)_URL = "https://sonicstorage.blob.core.windows.net/cisco/debian/cisco-nbi-package_1.0_amd64.deb?sv=2015-04-05&sr=b&sig=vci32sLDbhMS6%2F%2Bwf9vODC%2FZ2XPy0kV24DnohhCZ4Qc%3D&se=2047-04-22T02%3A38%3A46Z&sp=r"
 SONIC_ONLINE_DEBS += $(CISCO_NBI_PACKAGE)
 
 SONIC_STRETCH_DEBS += $(CISCO_N3132_PLATFORM_MODULE) $(CISCO_NBI_PACKAGE)
