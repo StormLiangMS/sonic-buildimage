@@ -99,13 +99,13 @@ index 0000000..1739840
 +../../sonic-linux-kernel.patch/patch/include-asm-generic-gpio-ARCH_NR_GPIOs-1024.patch
 \ No newline at end of file
 diff --git a/patch/series b/patch/series
-index 9b681ae..9c704f2 100755
+index 473685e..d7fa090 100755
 --- a/patch/series
 +++ b/patch/series
-@@ -77,6 +77,15 @@ linux-4.13-thermal-intel_pch_thermal-Fix-enable-check-on.patch
- 0040-mlxsw-core-add-support-for-Gear-Box-temperatures-in-.patch
- 0041-mlxsw-minimal-Provide-optimization-for-I2C-bus-acces.patch
- linux-4.16-firmware-dmi-handle-missing-DMI-data-gracefully.patch
+@@ -106,3 +106,12 @@ net-backport-ipv6-missing-route.patch
+ # Tdriver-hwmon-pmbus-ucd9200-mlnx.patch
+ # Trtnetlink-catch-EOPNOTSUPP-errors.patch
+ # Tbridge-per-port-multicast-broadcast-flood-flags.patch
 +config-cisco-n3132-gx.patch
 +config-cisco-n9200.patch
 +driver-hwmon-adt7462-fix-alarm-mask.patch
@@ -115,6 +115,3 @@ index 9b681ae..9c704f2 100755
 +driver-mfd-enable-dh89xxcc-gpio.patch
 +driver-rtc-cmos-address-space-256.patch
 +include-asm-generic-gpio-ARCH_NR_GPIOs-1024.patch
- #
- # This series applies on GIT commit 1451b36b2b0d62178e42f648d8a18131af18f7d8
- # Tkernel-sched-core-fix-cgroup-fork-race.patch
