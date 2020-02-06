@@ -55,8 +55,14 @@ function nos_get_platform ()
         N9K-C9336C-FX2)
             echo "x86_64-cisco_N9K_C9336CFX"
             ;;
+        N9K-C9336C-FX2-OE)
+            echo "x86_64-cisco_N9K_C9336CFX"
+            ;;
         N9K-C9364C)
             echo "x86_64-cisco_N9K_C9364C"
+            ;;
+        N9K-C9348GC-FXP)    
+            echo "x86_64-cisco_N9K_C9348GCFXP"
             ;;
         N3K-C34180YC)
             echo "x86_64-n34180yc-r0"
@@ -70,6 +76,12 @@ function nos_get_platform ()
         N3K-C3464C-OE)
             echo "x86_64-n3464c-r0"
             ;;
+        N9K-C93180YC-EX)
+            echo "x86_64-cisco_N9K_C93180YCEX"
+            ;;
+        N9K-C9348GC-FXP)    
+            echo "x86_64-cisco_N9K_C9348GCFXP"
+            ;;
         N3K-C3132Q-40GE)
             echo "x86_64-m3000-r0"
             ;;
@@ -81,6 +93,9 @@ function nos_get_platform ()
             ;;
         N3K-C3132Q-X-OE)
             echo "x86_64-m3000-r1"
+            ;;
+        N3K-C3164Q-40GE)
+            echo "x86_64-n3164-r0"
             ;;
         *)
             echo "x86_64-n9200-r0"
@@ -100,7 +115,8 @@ function nos_get_platform_type()
         N9K-C9336C-FX2 |\
         N9K-C9364C |\
         N3K-C34180YC | N3K-C34180YC-OE |\
-        N3K-C3464C | N3K-C3464C-OE)
+        N3K-C3164Q-40GE |\
+        N3K-C3464C | N3K-C3464C-OE | N9K-C9348GC-FXP | N9K-C93180YC-EX)
             echo "N9k"
             ;;
         N3K-C3132Q-40GE | N3K-C3132Q-OE |\
@@ -180,10 +196,11 @@ function get_bootflash_disk_device() {
     n3k_disks="/sys/devices/pci0000:00/0000:00:1d.0/usb1/1-1/1-1.1/1-1.1:1.0 \
                /sys/devices/pci0000:00/0000:00:1d.0/usb2/2-1/2-1.1/2-1.1:1.0 \
                /sys/devices/pci0000:00/0000:00:1d.0/usb1/1-1/1-1.1/1-1.1.1/1-1.1.1:1.0"
+    # Need to FIX for N3k
     for d in /sys/block/sd* ; do
         if [ -e "$d/device" ] ; then
             path="$(realpath $d/device)"
-            for p in $n3k_disks; do
+            for p in $n9k_disks; do
                 if echo "$path" | grep -q "$p" ; then
                     device="/dev/$(basename $d)"
                     echo $device
@@ -205,8 +222,12 @@ function nos_mount_bootflash ()
         echo "Bootflash disk not found"
         return $NOS_INSTALL_GENERAL_FAILED
     fi
-    local DEVSDA3="$PHYDEV"3
-    mount $DEVSDA3 /bootflash
+# Need to FIX for N3k
+#    local DEVSDA3="$PHYDEV"3
+#    mount $DEVSDA3 /bootflash
+
+    local DEVSDA4="$PHYDEV"4
+    mount $DEVSDA4 /bootflash
     return $?
 }
 

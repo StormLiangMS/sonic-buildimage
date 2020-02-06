@@ -244,6 +244,7 @@ elif [ "$IMAGE_TYPE" = "nbi" ]; then
     pushd files/nbi && ./mknbi-bin-ver.sh ../../$OUTPUT_NBI_IMAGE sonic-install.seg4 ../../files/nbi/vmlinuz ../../nbi-install-initrd.img; popd
     sudo rm nbi-install-initrd.img
     sudo rm -f files/nbi/mknbi-bin-ver.sh
+    sudo rm -fr nbi-host nbi-"$ONIE_INSTALLER_PAYLOAD" nbi-md5sums
 else
     echo "Error: Non supported image type $IMAGE_TYPE"
     exit 1
