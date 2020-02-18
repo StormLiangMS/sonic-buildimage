@@ -1,0 +1,35 @@
+From 7c49d5b28bfde27df18d20bc7a9de564d29e72f6 Mon Sep 17 00:00:00 2001
+From: Jiahua Wang <jiahwang@cisco.com>
+Date: Mon, 17 Feb 2020 17:16:40 -0800
+Subject: [PATCH] Add driver-hwmon-pmbus-cisco_n2200-update2.patch
+
+Signed-off-by: Jiahua Wang <jiahwang@cisco.com>
+---
+ patch/driver-hwmon-pmbus-cisco_n2200-update2.patch | 1 +
+ patch/series                                       | 1 +
+ 2 files changed, 2 insertions(+)
+ create mode 120000 patch/driver-hwmon-pmbus-cisco_n2200-update2.patch
+
+diff --git a/patch/driver-hwmon-pmbus-cisco_n2200-update2.patch b/patch/driver-hwmon-pmbus-cisco_n2200-update2.patch
+new file mode 120000
+index 0000000..d416092
+--- /dev/null
++++ b/patch/driver-hwmon-pmbus-cisco_n2200-update2.patch
+@@ -0,0 +1 @@
++../../sonic-linux-kernel.patch/patch/driver-hwmon-pmbus-cisco_n2200-update2.patch
+\ No newline at end of file
+diff --git a/patch/series b/patch/series
+index d732625..282afd1 100644
+--- a/patch/series
++++ b/patch/series
+@@ -61,6 +61,7 @@ config-cisco-n9200.patch
+ driver-hwmon-adt7462-fix-alarm-mask.patch
+ driver-hwmon-pmbus-cisco_n2200.patch
+ driver-hwmon-pmbus-cisco_n2200-update.patch
++driver-hwmon-pmbus-cisco_n2200-update2.patch
+ driver-hwmon-pmbus-cisco-solvan.patch
+ driver-mfd-enable-dh89xxcc-gpio.patch
+ driver-rtc-cmos-address-space-256.patch
+-- 
+2.7.4
+

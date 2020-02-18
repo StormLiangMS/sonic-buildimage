@@ -1,0 +1,72 @@
+From 1f04dff6caa32aa35ed66059af63fae855b5b769 Mon Sep 17 00:00:00 2001
+From: Jiahua Wang <jiahwang@cisco.com>
+Date: Sat, 15 Feb 2020 21:54:25 -0800
+Subject: [PATCH] Ignore PMBUS_READ_IOUT and some other registers for now as
+ reading PMBUS_READ_IOUT can cause i2c bus hang under certain condition on
+ some PSU.
+
+Signed-off-by: Jiahua Wang <jiahwang@cisco.com>
+---
+ drivers/hwmon/pmbus/cisco_n2200.c | 17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/hwmon/pmbus/cisco_n2200.c b/drivers/hwmon/pmbus/cisco_n2200.c
+index cc6c08f..748a77c 100644
+--- a/drivers/hwmon/pmbus/cisco_n2200.c
++++ b/drivers/hwmon/pmbus/cisco_n2200.c
+@@ -139,7 +139,6 @@ static int cisco_n2200_read_word_data(struct i2c_client *client,
+ 		 * being reported. so we need to convert them from linear->data
+ 		 * and data->direct and let pmbus_core convert from direct->data
+ 		 */
+-	case PMBUS_IOUT_OC_WARN_LIMIT:
+ 	case PMBUS_IOUT_OC_FAULT_LIMIT:
+ 		ldata = pmbus_read_word_data(client, page, reg);
+ 		if (ldata < 0)
+@@ -155,6 +154,18 @@ static int cisco_n2200_read_word_data(struct i2c_client *client,
+ 	case PMBUS_OT_WARN_LIMIT:
+ 	case PMBUS_POUT_OP_WARN_LIMIT:
+ 		return -1;
++    /* Reading PMBUS_READ_IOUT register can cause i2c bus hang intermittently
++     * on some Cisco PSU. Ignore some regsiters with the concern them may
++     * cause i2c bus hang.
++     */
++    case PMBUS_READ_IOUT:
++    case PMBUS_STATUS_IOUT:
++    case PMBUS_IOUT_OC_WARN_LIMIT:
++    case PMBUS_READ_IIN:
++    case PMBUS_IIN_OC_WARN_LIMIT:
++    case PMBUS_UT_WARN_LIMIT:
++    case PMBUS_PIN_OP_WARN_LIMIT:
++		return -1;
+ 	default:
+ 		break;
+ 	}
+@@ -176,8 +187,10 @@ static void pmbus_find_sensor_groups(struct i2c_client *client,
+ 		info->func[0] |= PMBUS_HAVE_VIN;
+ 	if (pmbus_check_word_register(client, 0, PMBUS_READ_VCAP))
+ 		info->func[0] |= PMBUS_HAVE_VCAP;
++#if 0
+ 	if (pmbus_check_word_register(client, 0, PMBUS_READ_IIN))
+ 		info->func[0] |= PMBUS_HAVE_IIN;
++#endif
+ 	if (pmbus_check_word_register(client, 0, PMBUS_READ_PIN))
+ 		info->func[0] |= PMBUS_HAVE_PIN;
+ 	if (info->func[0]
+@@ -215,12 +228,14 @@ static void pmbus_find_sensor_groups(struct i2c_client *client,
+ 						      PMBUS_STATUS_VOUT))
+ 				info->func[page] |= PMBUS_HAVE_STATUS_VOUT;
+ 		}
++#if 0
+ 		if (pmbus_check_word_register(client, page, PMBUS_READ_IOUT)) {
+ 			info->func[page] |= PMBUS_HAVE_IOUT;
+ 			if (pmbus_check_byte_register(client, 0,
+ 						      PMBUS_STATUS_IOUT))
+ 				info->func[page] |= PMBUS_HAVE_STATUS_IOUT;
+ 		}
++#endif
+ 		if (pmbus_check_word_register(client, page, PMBUS_READ_POUT))
+ 			info->func[page] |= PMBUS_HAVE_POUT;
+ 	}
+-- 
+2.1.4
+
