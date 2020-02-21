@@ -15,7 +15,7 @@ class PsuUtil(PsuBase):
         self.psu_num = 2
         self.psu_buses = [7, 8]
         self.psu_path = "/sys/bus/i2c/devices/{}-005b/hwmon/"
-        self.psu_oper_status = "in1_input"
+        self.psu_oper_status = "in3_input"
         self.psu_presence = "/sys/class/gpio/gpio{}/value"
         self.psu_gpios = [494, 495]
 
