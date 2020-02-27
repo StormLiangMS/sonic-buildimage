@@ -32,6 +32,9 @@ class SfpUtil(SfpUtilBcmMdio):
     def __init__(self):
         SfpUtilBcmMdio.__init__(self)
 
+    def get_transceiver_change_event(self, timeout=0):
+        return True, {}
+
     def get_presence(self, port_num):
         BCM_USD_PHY_MOD_ABS_INPUT_REG = 0x1c82f
         PRESENCE_MASK = (1 << 6)
