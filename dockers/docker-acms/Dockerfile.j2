@@ -1,0 +1,63 @@
+{% from "dockers/dockerfile-macros.j2" import install_debian_packages, install_python_wheels, copy_files %}
+FROM ubuntu:18.04
+
+ARG docker_container_name
+
+# Make apt-get non-interactive
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Update apt's cache of available packages
+RUN apt-get update &&       \
+    apt-get install -f -y   \
+        rsyslog             \
+        gnupg               \
+        gnupg1              \
+        gnupg2              \
+        curl                \
+        libcurl4            \
+        libacl1             \
+        libuuid1            \
+        libxml2             \
+        python-pip
+
+{% if docker_acms_whls.strip() %}
+# Copy locally-built Python wheel dependencies
+{{ copy_files("python-wheels/", docker_acms_whls.split(' '), "/python-wheels/") }}
+
+# Install locally-built Python wheel dependencies
+{{ install_python_wheels(docker_acms_whls.split(' ')) }}
+{% endif %}
+
+# Create /acms directory to hold all files until runtime
+RUN mkdir -p /acms
+
+# Copy ACMS config file to the container
+COPY ["acms_secrets.ini", "/acms"]
+COPY ["acms.ini", "/acms"]
+
+# Copy public key for downloading ACMS from Ubuntu repo
+COPY ["msftPackagesKey.pgp", "/acms"]
+
+# Placeholder for certificates
+RUN mkdir -p /etc/sonic/certificates
+RUN chmod 600 /etc/sonic/certificates
+
+# Install ACMS
+COPY ["install_acms.sh", "/acms"]
+RUN cd /acms && sh install_acms.sh
+
+RUN pip install supervisor==4.1.0
+
+RUN apt-mark manual python python-setuptools
+
+RUN apt-get autoremove -y python-pip
+
+RUN apt-get clean -y      && \
+    apt-get autoclean -   && \
+    apt-get autoremove -y && \
+    rm -rf /debs
+
+COPY ["start.sh", "cert_converter.py", "/usr/bin/"]
+COPY ["supervisord.conf", "/etc/supervisor/"]
+
+ENTRYPOINT ["/usr/local/bin/supervisord"]

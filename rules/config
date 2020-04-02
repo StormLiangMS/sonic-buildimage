@@ -141,4 +141,9 @@ K8s_GCR_IO_PAUSE_VERSION = 3.2
 
 =======
 K8s_CNI_FLANNEL_VERSION = v0.12.0
+<<<<<<< HEAD
 >>>>>>> 979266d4b... Disable NAT/SFLOW/MGMT Docker for Internal.
+=======
+# ENABLE_ACMS - build docker-acms for managing certificates on the device
+ENABLE_ACMS = y
+>>>>>>> a410c3021... Merged PR 2761709: Introduce ACMS container

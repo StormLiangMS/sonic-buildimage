@@ -102,8 +102,16 @@ ifneq (,$(filter $(CONFIGURED_ARCH), armhf arm64))
 INCLUDE_SYSTEM_TELEMETRY = n
 endif
 
+<<<<<<< HEAD
 ifeq ($(SONIC_INCLUDE_RESTAPI),y)
 INCLUDE_RESTAPI = y
+=======
+ifeq ($(SONIC_ENABLE_RESTAPI),y)
+ENABLE_RESTAPI = y
+
+ifeq ($(SONIC_ENABLE_ACMS),y)
+ENABLE_ACMS = y
+>>>>>>> a410c3021... Merged PR 2761709: Introduce ACMS container
 endif
 
 ifeq ($(SONIC_ENABLE_SYNCD_RPC),y)
@@ -201,6 +209,7 @@ $(info "ENABLE_ORGANIZATION_EXTENSIONS"  : "$(ENABLE_ORGANIZATION_EXTENSIONS)")
 $(info "HTTP_PROXY"                      : "$(HTTP_PROXY)")
 $(info "HTTPS_PROXY"                     : "$(HTTPS_PROXY)")
 $(info "ENABLE_ZTP"                      : "$(ENABLE_ZTP)")
+$(info "ENABLE_ACMS"                     : "$(ENABLE_ACMS)")
 $(info "SONIC_DEBUGGING_ON"              : "$(SONIC_DEBUGGING_ON)")
 $(info "SONIC_PROFILING_ON"              : "$(SONIC_PROFILING_ON)")
 $(info "KERNEL_PROCURE_METHOD"           : "$(KERNEL_PROCURE_METHOD)")
@@ -681,11 +690,16 @@ $(addprefix $(TARGET_PATH)/, $(SONIC_INSTALLERS)) : $(TARGET_PATH)/% : \
 	export enable_organization_extensions="$(ENABLE_ORGANIZATION_EXTENSIONS)"
 	export enable_dhcp_graph_service="$(ENABLE_DHCP_GRAPH_SERVICE)"
 	export enable_ztp="$(ENABLE_ZTP)"
+<<<<<<< HEAD
 	export include_system_telemetry="$(INCLUDE_SYSTEM_TELEMETRY)"
 	export include_restapi="$(INCLUDE_RESTAPI)"
 	export include_nat="$(INCLUDE_NAT)"
 	export include_sflow="$(INCLUDE_SFLOW)"
 	export include_mgmt_framework="$(INCLUDE_MGMT_FRAMEWORK)"
+=======
+	export enable_nat="$(ENABLE_NAT)"
+	export enable_acms="$(ENABLE_ACMS)"
+>>>>>>> a410c3021... Merged PR 2761709: Introduce ACMS container
 	export shutdown_bgp_on_start="$(SHUTDOWN_BGP_ON_START)"
 	export include_kubernetes="$(INCLUDE_KUBERNETES)"
 	export enable_pfcwd_on_start="$(ENABLE_PFCWD_ON_START)"
