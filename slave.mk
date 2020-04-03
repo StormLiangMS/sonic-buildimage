@@ -108,6 +108,7 @@ INCLUDE_RESTAPI = y
 =======
 ifeq ($(SONIC_ENABLE_RESTAPI),y)
 ENABLE_RESTAPI = y
+endif
 
 ifeq ($(SONIC_ENABLE_ACMS),y)
 ENABLE_ACMS = y
