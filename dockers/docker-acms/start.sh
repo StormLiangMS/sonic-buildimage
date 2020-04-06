@@ -27,13 +27,18 @@ fi
 
 while [ : ]
 do
-    if [[ -f $BOOTSTRAP_CERT && $BOOTSTRAP_STATUS = 0 ]]; then
-        # Bootstrap ACMS
-        /usr/bin/acms -Bootstrap -Dependant client -BaseDirPath /var/opt/msft/
+    if [[ $BOOTSTRAP_STATUS == 1 ]]; then
         break
+    else
+        if [[ -f $BOOTSTRAP_CERT ]]; then
+            # Bootstrap ACMS
+            /usr/bin/acms -Bootstrap -Dependant client -BaseDirPath /var/opt/msft/
+            break
+        fi
     fi
     sleep 5s
 done
+
 
 # Start ACMS
 /usr/bin/acms -Start -BaseDirPath /var/opt/msft/

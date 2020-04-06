@@ -46,6 +46,7 @@ RUN chmod 600 /etc/sonic/certificates
 COPY ["install_acms.sh", "/acms"]
 RUN cd /acms && sh install_acms.sh
 
+RUN mkdir -p /etc/supervisor /var/log/supervisor
 RUN pip install supervisor==4.1.0
 
 RUN apt-mark manual python python-setuptools
@@ -59,5 +60,9 @@ RUN apt-get clean -y      && \
 
 COPY ["start.sh", "cert_converter.py", "/usr/bin/"]
 COPY ["supervisord.conf", "/etc/supervisor/"]
+
+COPY ["etc/rsyslog.conf", "/etc/rsyslog.conf"]
+COPY ["etc/rsyslog.d/*", "/etc/rsyslog.d/"]
+RUN [ -f /etc/rsyslog.conf ] && sed -ri "s/%syslogtag%/$docker_container_name#%syslogtag%/;" /etc/rsyslog.conf
 
 ENTRYPOINT ["/usr/local/bin/supervisord"]
