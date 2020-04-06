@@ -290,6 +290,7 @@ sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y in
     sysfsutils              \
     squashfs-tools          \
     grub2-common            \
+    amd64-microcode         \
     rsyslog                 \
     ethtool                 \
     screen                  \
@@ -345,6 +346,14 @@ fi
 
 ## Disable kexec supported reboot which was installed by default
 sudo sed -i 's/LOAD_KEXEC=true/LOAD_KEXEC=false/' $FILESYSTEM_ROOT/etc/default/kexec
+
+## Override fam16h microcode by a fixed version
+base64 -d files/Aboot/microcode_amd_fam16h.bin.base64 | \
+       sudo tee $FILESYSTEM_ROOT/lib/firmware/amd-ucode/microcode_amd_fam16h.bin > /dev/null
+
+## Skip some amd64_microcode initramfs hook checks
+echo "AMD64UCODE_INITRAMFS=early" | \
+       sudo tee -a $FILESYSTEM_ROOT/etc/default/amd64-microcode > /dev/null
 
 ## Remove sshd host keys, and will regenerate on first sshd start
 sudo rm -f $FILESYSTEM_ROOT/etc/ssh/ssh_host_*_key*
