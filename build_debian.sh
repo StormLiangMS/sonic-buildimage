@@ -346,6 +346,19 @@ fi
 ## Disable kexec supported reboot which was installed by default
 sudo sed -i 's/LOAD_KEXEC=true/LOAD_KEXEC=false/' $FILESYSTEM_ROOT/etc/default/kexec
 
+if [ "$IMAGE_TYPE" != "nbi" ]; then
+    sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT \
+        apt-get -y install amd64-microcode
+
+    ## Override fam16h microcode by a fixed version
+    base64 -d files/Aboot/microcode_amd_fam16h.bin.base64 | \
+        sudo tee $FILESYSTEM_ROOT/lib/firmware/amd-ucode/microcode_amd_fam16h.bin > /dev/null
+
+    ## Skip some amd64_microcode initramfs hook checks
+    echo "AMD64UCODE_INITRAMFS=early" | \
+        sudo tee -a $FILESYSTEM_ROOT/etc/default/amd64-microcode > /dev/null
+fi
+
 ## Remove sshd host keys, and will regenerate on first sshd start
 sudo rm -f $FILESYSTEM_ROOT/etc/ssh/ssh_host_*_key*
 sudo cp files/sshd/host-ssh-keygen.sh $FILESYSTEM_ROOT/usr/local/bin/
