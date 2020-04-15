@@ -14,6 +14,6 @@ SONIC_INSTALL_DOCKER_IMAGES += $(DOCKER_ACMS)
 endif
 
 $(DOCKER_ACMS)_CONTAINER_NAME = acms
-$(DOCKER_ACMS)_RUN_OPT += --net=host --privileged -t
+$(DOCKER_ACMS)_RUN_OPT += --privileged -t
 $(DOCKER_ACMS)_RUN_OPT += -v /etc/sonic/certificates:/etc/sonic/certificates:rw
 $(DOCKER_ACMS)_RUN_OPT += -v /var/opt/msft:/var/opt/msft:rw
