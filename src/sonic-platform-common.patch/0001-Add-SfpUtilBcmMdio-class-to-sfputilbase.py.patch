@@ -8,14 +8,13 @@ Subject: [PATCH] Add SfpUtilBcmMdio class to sfputilbase.py
  1 file changed, 175 insertions(+)
 
 diff --git a/sonic_sfp/sfputilbase.py b/sonic_sfp/sfputilbase.py
-index d8e522b..b67a442 100644
+index 30ad04b..fdc3a43 100644
 --- a/sonic_sfp/sfputilbase.py
 +++ b/sonic_sfp/sfputilbase.py
-@@ -606,3 +606,178 @@ class SfpUtilBase(object):
-         :returns: Boolean, True if reset successful, False if not
+@@ -1278,3 +1278,177 @@ class SfpUtilBase(object):
          """
          return
-+
+ 
 +
 +class SfpUtilBcmMdio(SfpUtilBase):
 +    """Provides SFP+/QSFP EEPROM access via BCM MDIO methods"""
