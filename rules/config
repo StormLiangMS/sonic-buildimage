@@ -79,6 +79,12 @@ ENABLE_ORGANIZATION_EXTENSIONS = y
 #SONIC_DEBUGGING_ON = y
 #SONIC_PROFILING_ON = y
 
+<<<<<<< HEAD
+=======
+# ENABLE_SYSTEM_TELEMETRY - build docker-sonic-telemetry for system telemetry support
+ENABLE_SYSTEM_TELEMETRY = n
+
+>>>>>>> 1eaeddf0d... Disable Telemetry till the cerificate issue is resolved.
 # DEFAULT_KERNEL_PROCURE_METHOD - default method for obtaining kernel
 #   build:    build kernel from source
 #   download: download pre-built kernel from Azure storage.
@@ -127,7 +133,11 @@ ENABLE_NAT = n
 
 # INCLUDE_KUBERNETES - if set to y kubernetes packages are installed to be able to
 # run as worker node in kubernetes cluster.
+<<<<<<< HEAD
 INCLUDE_KUBERNETES = n
+=======
+INSTALL_KUBERNETES = y
+>>>>>>> 1eaeddf0d... Disable Telemetry till the cerificate issue is resolved.
 
 # KUBERNETES_VERSION - Set to the required version.
 # K8s_GCR_IO_PAUSE_VERSION - Version of k8s universal pause container image
