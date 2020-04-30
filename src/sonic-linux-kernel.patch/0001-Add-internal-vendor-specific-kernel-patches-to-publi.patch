@@ -99,10 +99,10 @@ index 0000000..1739840
 +../../sonic-linux-kernel.patch/patch/include-asm-generic-gpio-ARCH_NR_GPIOs-1024.patch
 \ No newline at end of file
 diff --git a/patch/series b/patch/series
-index a213a16..ac44f6f 100755
+index f1dfd14..00317f6 100755
 --- a/patch/series
 +++ b/patch/series
-@@ -107,3 +107,12 @@ Support-for-fullcone-nat.patch
+@@ -122,3 +122,12 @@ fix_ismt_alignment_issue.patch
  # Tdriver-hwmon-pmbus-ucd9200-mlnx.patch
  # Trtnetlink-catch-EOPNOTSUPP-errors.patch
  # Tbridge-per-port-multicast-broadcast-flood-flags.patch

@@ -10,12 +10,12 @@ Signed-off-by: jiahwang <jiahwang@cisco.com>
  1 file changed, 1 insertion(+)
 
 diff --git a/debian/build/build_amd64_none_amd64/.config b/debian/build/build_amd64_none_amd64/.config
-index 6af2e6a..3a58bf4 100644
+index b90c9d9..6b1a56b 100644
 --- a/debian/build/build_amd64_none_amd64/.config
 +++ b/debian/build/build_amd64_none_amd64/.config
-@@ -3960,6 +3960,7 @@ CONFIG_SENSORS_UCD9200=m
- CONFIG_SENSORS_DPS1900=m
+@@ -3974,6 +3974,7 @@ CONFIG_SENSORS_XDPE122=m
  # CONFIG_SENSORS_ZL6100 is not set
+ CONFIG_SENSORS_DPS1900=m
  CONFIG_SENSORS_CISCO_N2200=m
 +CONFIG_SENSORS_CISCO_PMBUS=m
  # CONFIG_SENSORS_SHT15 is not set
