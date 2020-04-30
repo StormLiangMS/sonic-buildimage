@@ -190,13 +190,9 @@ function nos_install_image ()
     return $NOS_INSTALL_EXIT_SUCCESS
 }
 
-function get_bootflash_disk_device() {
+function get_n9k_bootflash_disk_device() {
     n9k_disks="/sys/devices/pci0000:00/0000:00:1f.2/ata5/host4/target4:0:0/4:0:0:0 \
                /sys/devices/pci0000:00/0000:00:1f.2/ata2/host1/target1:0:0/1:0:0:0"
-    n3k_disks="/sys/devices/pci0000:00/0000:00:1d.0/usb1/1-1/1-1.1/1-1.1:1.0 \
-               /sys/devices/pci0000:00/0000:00:1d.0/usb2/2-1/2-1.1/2-1.1:1.0 \
-               /sys/devices/pci0000:00/0000:00:1d.0/usb1/1-1/1-1.1/1-1.1.1/1-1.1.1:1.0"
-    # Need to FIX for N3k
     for d in /sys/block/sd* ; do
         if [ -e "$d/device" ] ; then
             path="$(realpath $d/device)"
@@ -212,6 +208,50 @@ function get_bootflash_disk_device() {
     return 1
 }
 
+function get_n3k_bootflash_disk_device() {
+    n3k_disks="/sys/devices/pci0000:00/0000:00:1d.0/usb1/1-1/1-1.1/1-1.1:1.0 \
+               /sys/devices/pci0000:00/0000:00:1d.0/usb2/2-1/2-1.1/2-1.1:1.0 \
+               /sys/devices/pci0000:00/0000:00:1d.0/usb1/1-1/1-1.1/1-1.1.1/1-1.1.1:1.0"
+    for d in /sys/block/sd* ; do
+        if [ -e "$d/device" ] ; then
+            path="$(realpath $d/device)"
+            for p in $n3k_disks; do
+                if echo "$path" | grep -q "$p" ; then
+                    device="/dev/$(basename $d)"
+                    echo $device
+                    return 0
+                fi
+            done
+        fi
+    done
+    return 1
+}
+
+function get_bootflash_disk_device() {
+    local disk_type=$(nos_get_platform_type)
+    if [ $? -ne 0 ]; then
+        echo "Platform not supported"
+        return 1
+    fi
+    local rc=1
+    local disk_dev=""
+    case "$disk_type" in
+        N9k)
+        disk_dev=$(get_n9k_bootflash_disk_device)
+        rc=$?
+        ;;
+        N3k)
+        disk_dev=$(get_n3k_bootflash_disk_device)
+        rc=$?
+        ;;
+        *)
+        rc=1
+        ;;
+    esac
+    echo $disk_dev
+    return $rc
+}
+
 function nos_mount_bootflash ()
 {
     if [ ! -d /bootflash ] ; then
@@ -222,13 +262,29 @@ function nos_mount_bootflash ()
         echo "Bootflash disk not found"
         return $NOS_INSTALL_GENERAL_FAILED
     fi
-# Need to FIX for N3k
-#    local DEVSDA3="$PHYDEV"3
-#    mount $DEVSDA3 /bootflash
 
+    local DEVSDA3="$PHYDEV"3
     local DEVSDA4="$PHYDEV"4
-    mount $DEVSDA4 /bootflash
-    return $?
+    local disk_type=$(nos_get_platform_type)
+    if [ $? -ne 0 ]; then
+        echo "Platform not supported"
+        return $NOS_INSTALL_GENERAL_FAILED
+    fi
+    local rc=$NOS_INSTALL_GENERAL_FAILED
+    case "$disk_type" in
+        N9k)
+        mount $DEVSDA4 /bootflash
+        rc=$?
+        ;;
+        N3k)
+        mount $DEVSDA3 /bootflash
+        rc=$?
+        ;;
+        *)
+        rc=$NOS_INSTALL_GENERAL_FAILED
+        ;;
+    esac
+    return $rc
 }
 
 function nos_umount_bootflash ()
