@@ -146,23 +146,6 @@ elif [ "$IMAGE_TYPE" = "aboot" ]; then
     rm $ABOOT_BOOT_IMAGE
 elif [ "$IMAGE_TYPE" = "nbi" ]; then
     echo "Build NBI installer"
-
-    # Download BLOBs from Azure storage
-    IMGHDR_URL="https://sonicstorage.blob.core.windows.net/cisco/nbi/imghdr?sv=2015-04-05&sr=b&sig=%2B41NYO%2FDPp4lesLH20azFI9tFauMFdbfyThAMc6jToY%3D&se=2047-04-22T02%3A48%3A18Z&sp=r"
-    INITRD_IMG_URL="https://sonicstorage.blob.core.windows.net/cisco/nbi/initrd.img?sv=2015-04-05&sr=b&sig=%2BB6iFmECwItZ0vlwgXPKvMKH0tQCwfezXkJ%2Bo9ZgnAY%3D&se=2046-08-26T00%3A50%3A12Z&sp=r"
-    NOS_KEXEC_URL="https://sonicstorage.blob.core.windows.net/cisco/nbi/nos_kexec?sv=2015-04-05&sr=b&sig=JkKGZZV5sDN3Xps5wcjgiOVQNTNkyaEqfO4%2BvATIffE%3D&se=2046-08-26T00%3A51%3A12Z&sp=r"
-    SONIC_INSTALL_SEG4_URL="https://sonicstorage.blob.core.windows.net/cisco/nbi/sonic-install.seg4?sv=2015-04-05&sr=b&sig=bCaI4qH3A6%2BLm7vAqisMQSgU6m4oytGsNbn9jq2ZVpM%3D&se=2046-08-26T00%3A55%3A13Z&sp=r"
-    SONIC_RUN_SEG4_URL="https://sonicstorage.blob.core.windows.net/cisco/nbi/sonic-run.seg4?sv=2015-04-05&sr=b&sig=3v%2FqETqzoEJUPfctfz8%2FMfnx2kgXc1gBn2tpf%2F0khh0%3D&se=2046-08-26T00%3A56%3A16Z&sp=r"
-    VMLINUZ_URL="https://sonicstorage.blob.core.windows.net/cisco/nbi/vmlinuz?sv=2015-04-05&sr=b&sig=vsivvefxH5vhfuvfnmp%2Fp48pqi%2FCvkX7H31tSJJpdfY%3D&se=2046-08-26T00%3A57%3A09Z&sp=r"
-    wget --no-use-server-timestamps -O files/nbi/imghdr "$IMGHDR_URL"
-    wget --no-use-server-timestamps -O files/nbi/initrd.img "$INITRD_IMG_URL"
-    wget --no-use-server-timestamps -O files/nbi/nos_kexec "$NOS_KEXEC_URL"
-    wget --no-use-server-timestamps -O files/nbi/sonic-install.seg4 "$SONIC_INSTALL_SEG4_URL"
-    wget --no-use-server-timestamps -O files/nbi/sonic-run.seg4 "$SONIC_RUN_SEG4_URL"
-    wget --no-use-server-timestamps -O files/nbi/vmlinuz "$VMLINUZ_URL"
-    chmod +x files/nbi/imghdr
-    chmod +x files/nbi/nos_kexec
-
     mkdir -p `dirname $OUTPUT_NBI_IMAGE`
     sudo rm -f $OUTPUT_NBI_IMAGE
     sudo rm -f nbi-md5sums
