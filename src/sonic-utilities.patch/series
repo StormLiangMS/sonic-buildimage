@@ -1,4 +1,3 @@
 0001-Add-Cisco-NBI-image-format-support-in-sonic_installe.patch
 0002-Stopping-all-BGP-SLB-neighbors-if-they-re-presented-.patch
 0005-Print-FAILED-when-run-command-failed.patch
-0006-get-next-boot-image-handles-No-autoboot-case.patch
