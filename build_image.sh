@@ -181,6 +181,15 @@ elif [ "$IMAGE_TYPE" = "nbi" ]; then
     cp files/nbi/mknbi-ks.sh files/nbi/mknbi-ks-ver.sh
     sed -i -e "s/%%IMAGE_VERSION%%/$IMAGE_VERSION/g" files/nbi/mknbi-ks-ver.sh
     pushd files/nbi && ./mknbi-ks-ver.sh ../../$NBI_BOOT_IMAGE sonic-run.seg4 ../../fsroot/boot/vmlinuz-${LINUX_KERNEL_VERSION}-amd64 ../../nbi-run-initrd.img; popd
+    if [ "$TARGET_MACHINE" = "broadcom" ]; then
+        sudo rm -fr target/n3k
+        mkdir target/n3k
+        sudo rm -f files/nbi/mknbi-n3k-ks-ver.sh
+        cp files/nbi/mknbi-n3k-ks.sh files/nbi/mknbi-n3k-ks-ver.sh
+        sed -i -e "s/%%IMAGE_VERSION%%/$IMAGE_VERSION/g" files/nbi/mknbi-n3k-ks-ver.sh
+        pushd files/nbi && ./mknbi-n3k-ks-ver.sh ../../$NBI_BOOT_N3K_IMAGE sonic-run.seg4 ../../fsroot/boot/vmlinuz-${LINUX_KERNEL_VERSION}-amd64 ../../nbi-run-initrd.img; popd
+        sudo rm -f files/nbi/mknbi-n3k-ks-ver.sh
+    fi
     sudo rm nbi-run-initrd.img
     sudo rm -f files/nbi/mknbi-ks-ver.sh
     sudo rm -f nos_install_plugin.tgz
@@ -218,6 +227,17 @@ elif [ "$IMAGE_TYPE" = "nbi" ]; then
     [ "$(id -ru)" != 0 ] && cpio_owner_root="-R 0:0"
     find . | cpio --quiet $cpio_owner_root -o -H newc | gzip > ../nbi-install-initrd.img
     popd
+    if [ "$TARGET_MACHINE" = "broadcom" ]; then
+        sudo rm -f nbi-host/image-$IMAGE_VERSION/$NBI_BOOT_IMAGE
+        cp $NBI_BOOT_N3K_IMAGE nbi-host/image-$IMAGE_VERSION
+        pushd nbi-host/ && zip -r ../n3k-nbi-"$ONIE_INSTALLER_PAYLOAD" .; popd
+        pushd initrd-root
+        sudo rm -f nbi-"$ONIE_INSTALLER_PAYLOAD"
+        cp ../n3k-nbi-"$ONIE_INSTALLER_PAYLOAD" nbi-"$ONIE_INSTALLER_PAYLOAD"
+        [ "$(id -ru)" != 0 ] && cpio_owner_root="-R 0:0"
+        find . | cpio --quiet $cpio_owner_root -o -H newc | gzip > ../n3k-nbi-install-initrd.img
+        popd
+    fi
     sudo rm -fr initrd-root
     sudo rm -f nos_install_plugin.tgz
     sudo rm -fr nos_plugin_files
@@ -227,6 +247,15 @@ elif [ "$IMAGE_TYPE" = "nbi" ]; then
     pushd files/nbi && ./mknbi-bin-ver.sh ../../$OUTPUT_NBI_IMAGE sonic-install.seg4 ../../files/nbi/vmlinuz ../../nbi-install-initrd.img; popd
     sudo rm nbi-install-initrd.img
     sudo rm -f files/nbi/mknbi-bin-ver.sh
+    if [ "$TARGET_MACHINE" = "broadcom" ]; then
+        sudo rm -f files/nbi/mknbi-n3k-bin-ver.sh
+        cp files/nbi/mknbi-n3k-bin.sh files/nbi/mknbi-n3k-bin-ver.sh
+        sed -i -e "s/%%IMAGE_VERSION%%/$IMAGE_VERSION/g" files/nbi/mknbi-n3k-bin-ver.sh
+        pushd files/nbi && ./mknbi-n3k-bin-ver.sh ../../$OUTPUT_NBI_N3K_IMAGE sonic-install.seg4 ../../files/nbi/vmlinuz ../../n3k-nbi-install-initrd.img; popd
+        sudo rm n3k-nbi-install-initrd.img
+        sudo rm -f files/nbi/mknbi-n3k-bin-ver.sh
+        sudo rm -fr n3k-nbi-"$ONIE_INSTALLER_PAYLOAD"
+    fi
     sudo rm -fr nbi-host nbi-"$ONIE_INSTALLER_PAYLOAD" nbi-md5sums
 else
     echo "Error: Non supported image type $IMAGE_TYPE"
