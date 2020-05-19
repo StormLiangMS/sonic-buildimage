@@ -20,6 +20,14 @@ RUN apt-get update &&       \
         libxml2             \
         python-pip
 
+{% if docker_acms_debs.strip() -%}
+# Copy locally-built Debian package dependencies
+{{ copy_files("debs/", docker_acms_debs.split(' '), "/debs/") }}
+
+# Install locally-built Debian packages and implicitly install their dependencies
+{{ install_debian_packages(docker_acms_debs.split(' ')) }}
+{%- endif %}
+
 {% if docker_acms_whls.strip() %}
 # Copy locally-built Python wheel dependencies
 {{ copy_files("python-wheels/", docker_acms_whls.split(' '), "/python-wheels/") }}
@@ -38,9 +46,9 @@ COPY ["acms.ini", "/acms"]
 # Copy public key for downloading ACMS from Ubuntu repo
 COPY ["msftPackagesKey.pgp", "/acms"]
 
-# Placeholder for certificates
-RUN mkdir -p /etc/sonic/certificates
-RUN chmod 600 /etc/sonic/certificates
+# Placeholder for credentials
+RUN mkdir -p /etc/sonic/credentials
+RUN chmod 600 /etc/sonic/credentials
 
 # Install ACMS
 COPY ["install_acms.sh", "/acms"]
@@ -48,6 +56,7 @@ RUN cd /acms && sh install_acms.sh
 
 RUN mkdir -p /etc/supervisor /var/log/supervisor
 RUN pip install supervisor==4.1.0
+RUN pip install redis==3.5.0
 
 RUN apt-mark manual python python-setuptools
 
@@ -58,7 +67,7 @@ RUN apt-get clean -y      && \
     apt-get autoremove -y && \
     rm -rf /debs
 
-COPY ["start.sh", "cert_converter.py", "/usr/bin/"]
+COPY ["start.sh", "cert_converter.py", "dSMS_endpoint_modifier.py", "/usr/bin/"]
 COPY ["supervisord.conf", "/etc/supervisor/"]
 
 COPY ["etc/rsyslog.conf", "/etc/rsyslog.conf"]

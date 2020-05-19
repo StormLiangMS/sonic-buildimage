@@ -10,9 +10,9 @@ import random, string
 from sonic_daemon_base.daemon_base import Logger
 
 # Location where this script finally puts the certs after format conversion
-certs_path = "/etc/sonic/certificates/"
+certs_path = "/etc/sonic/credentials/"
 # Location where ACMS downloads certs from dSMS
-acms_certs_path = "/var/opt/msft/client/dsms/sonic-test/certificates/chained/"
+acms_certs_path = "/var/opt/msft/client/dsms/sonic-prod/certificates/chained/"
 # Location of the uber notify file
 uber_notify_file_path = "/var/opt/msft/client/anysecret.notify"
 # Length of password for private key encryption
@@ -31,14 +31,18 @@ def execute_cmd(cmd):
     return True
 
 def get_list_of_certs(path):
-    # Make list of the filenames of already format-converted certs
-    certs = [cert for cert in os.listdir(path) if (os.path.isfile(os.path.join(path, cert)) and not os.path.islink(os.path.join(path, cert)))]
+    # Make list of the certs at a given location
+    files = [file_t for file_t in os.listdir(path) if (os.path.isfile(os.path.join(path, file_t)) and not os.path.islink(os.path.join(path, file_t)))]
     cert_list = []
-    for cert in certs:
-        if ("notify" not in cert) and ("metadata" not in cert):
-            cert_name = cert.split(".")[0]
-            cert_ver = cert.split(".")[2]
-            cert_list.append(cert_name+"."+cert_ver)
+    supported_cert_ext = ['pfx', 'crt', 'key']
+    for file_t in files:
+        if ("notify" not in file_t) and ("metadata" not in file_t):
+            file_ext = file_t.split(".")[1]
+            file_name = file_t.split(".")[0]
+            if (file_ext in supported_cert_ext) and ("sonic_acms_bootstrap" not in file_name):
+                cert_name = file_name
+                cert_ver = file_t.split(".")[2]
+                cert_list.append(cert_name+"."+cert_ver)
     cert_list = list(set(cert_list))
     return cert_list
 
@@ -51,24 +55,25 @@ def link_to_latest_cert(acms_certs_path, certs_path):
     notify_files = [f for f in os.listdir(acms_certs_path) if (os.path.isfile(os.path.join(acms_certs_path, f)) and (".notify" in f))]
     for n_file in notify_files:
         cert_name = n_file.split(".")[0]
-        logger.log_info("cert_converter : convert_certs : Linking cert "+cert_name)
+        logger.log_info("cert_converter : link_to_latest_cert : Linking cert "+cert_name+".pfx")
         cert_ver = open(acms_certs_path+n_file, "r").readline().split(acms_certs_path)[1].split(".")[2]
         if certs_path+cert_name+".crt."+cert_ver not in targets:
             cmd = "ln -s -f "+certs_path+cert_name+".crt."+cert_ver+" "+certs_path+cert_name+".crt"
-            logger.log_notice("cert_converter : convert_certs : "+cmd, True)
+            logger.log_notice("cert_converter : link_to_latest_cert : "+cmd, True)
             if not execute_cmd(cmd):
                 return False
         if certs_path+cert_name+".key."+cert_ver not in targets:
             cmd = "ln -s -f "+certs_path+cert_name+".key."+cert_ver+" "+certs_path+cert_name+".key"
-            logger.log_notice("cert_converter : convert_certs : "+cmd, True)
+            logger.log_notice("cert_converter : link_to_latest_cert : "+cmd, True)
             if not execute_cmd(cmd):
                 return False
-        logger.log_info("cert_converter : convert_certs : Finished linking cert "+n_file)
+        logger.log_info("cert_converter : link_to_latest_cert : Finished linking cert "+cert_name+".pfx")
     return True
 
 def convert_certs(acms_certs_path, certs_path, password_length):
     existing_cert_names = get_list_of_certs(certs_path)
     downloaded_cert_names = get_list_of_certs(acms_certs_path)
+    new_cert_flag = False
 
     if len(downloaded_cert_names):
         for cert_name in downloaded_cert_names:
@@ -100,12 +105,14 @@ def convert_certs(acms_certs_path, certs_path, password_length):
                 if not execute_cmd(cmd):
                     logger.log_error("cert_converter : convert_certs : Removing private key failed!", True)
                     return False
+                new_cert_flag = True
                 logger.log_info("cert_converter : convert_certs : Finished converting "+cert_name)
             else:
                 logger.log_info("cert_converter : convert_certs : "+cert_name+" already converted")
-        if not (link_to_latest_cert(acms_certs_path, certs_path)):
-            logger.log_error("cert_converter : convert_certs : linking certs failed!", True)
-            return False
+        if new_cert_flag:
+            if not (link_to_latest_cert(acms_certs_path, certs_path)):
+                logger.log_error("cert_converter : convert_certs : linking certs failed!", True)
+                return False
     else:
         logger.log_info("cert_converter : convert_certs : no certs downloaded")
     return True
@@ -120,7 +127,7 @@ def main():
                 logger.log_error("cert_converter : main : Cert conversion failed!")
             break
         else:
-            time.sleep(5)
+            time.sleep(60)
 
     logger.log_info("cert_converter : main : Start polling every 1hr...")
     while True:
