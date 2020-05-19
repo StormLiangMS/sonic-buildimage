@@ -51,4 +51,4 @@ logger "ACMS bootstrapping complete"
 
 # Start ACMS
 logger "Starting ACMS"
-/usr/bin/acms -Start -BaseDirPath /var/opt/msft/
+supervisorctl start acms

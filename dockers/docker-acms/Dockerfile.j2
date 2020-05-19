@@ -69,6 +69,8 @@ RUN apt-get clean -y      && \
 
 COPY ["start.sh", "cert_converter.py", "dSMS_endpoint_modifier.py", "/usr/bin/"]
 COPY ["supervisord.conf", "/etc/supervisor/"]
+COPY ["files/supervisor-proc-exit-listener", "/usr/bin"]
+COPY ["critical_processes", "/etc/supervisor"]
 
 COPY ["etc/rsyslog.conf", "/etc/rsyslog.conf"]
 COPY ["etc/rsyslog.d/*", "/etc/rsyslog.d/"]

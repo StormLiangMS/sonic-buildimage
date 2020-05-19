@@ -17,3 +17,6 @@ $(DOCKER_ACMS)_CONTAINER_NAME = acms
 $(DOCKER_ACMS)_RUN_OPT += --privileged -t
 $(DOCKER_ACMS)_RUN_OPT += -v /etc/sonic/credentials:/etc/sonic/credentials:rw
 $(DOCKER_ACMS)_RUN_OPT += -v /var/opt/msft:/var/opt/msft:rw
+
+$(DOCKER_ACMS)_FILES += $(SUPERVISOR_PROC_EXIT_LISTENER_SCRIPT)
+$(DOCKER_ACMS)_BASE_IMAGE_FILES += monit_acms:/etc/monit/conf.d
