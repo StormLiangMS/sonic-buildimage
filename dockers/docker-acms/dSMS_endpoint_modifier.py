@@ -4,7 +4,7 @@ This script will continuously monitor if ACMS is using the right dSMS endpoint. 
 ACMS to use the correct regional dSMS endpoint and if ACMS fails with the regional endpoint, it will
 fall-back to global endpoint and vice-versa.
 '''
-import os, subprocess, time
+import os, subprocess, time, re
 from datetime import datetime, timedelta
 from sonic_daemon_base.daemon_base import Logger
 from swsscommon import swsscommon
@@ -15,6 +15,8 @@ boostrap_cert = "/etc/sonic/credentials/sonic_acms_bootstrap.pfx"
 dsms_conf = "/var/opt/msft/client/dsms.conf"
 # ACMS config file
 acms_conf = "/var/opt/msft/client/acms_secrets.ini"
+# ACMS config file original
+acms_conf_ori = "/acms/acms_secrets.ini"
 # Acceptable time difference between now and next ACMS poll event for meddling with ACMS config file
 time_margin = timedelta(seconds=1800)
 # Sleep timer for bootstrapping
@@ -31,6 +33,13 @@ def get_device_region():
     (status, tuples) = device_metadata.get("localhost")
     localhost = dict(tuples)
     return localhost['region']
+
+def get_device_cloudtype():
+    config_db = swsscommon.DBConnector("CONFIG_DB", REDIS_TIMEOUT_MS, True)
+    device_metadata = swsscommon.Table(config_db, swsscommon.CFG_DEVICE_METADATA_TABLE_NAME)
+    (status, tuples) = device_metadata.get("localhost")
+    localhost = dict(tuples)
+    return localhost['cloudtype']
 
 def restore_acms_config_file():
     '''
@@ -51,13 +60,11 @@ def change_endpoint_to_regional(acms_conf, region):
     '''
     acms_conf_file = open(acms_conf, "r+")
     contents = acms_conf_file.read()
-    acms_conf_file.write(contents.replace("global", region))
-    contents = acms_conf_file.read()
+    new_contents = re.sub("global", region, contents)
+    acms_conf_file.seek(0)
+    acms_conf_file.write(new_contents)
     acms_conf_file.close()
-    if (region in contents) and ("global" not in contents):
-        return True
-    else:
-        return False
+    return
 
 def parse_dsms_conf(dsms_conf):
     bootstrap_status = False
@@ -76,6 +83,40 @@ def parse_dsms_conf(dsms_conf):
             date_time = date_time.strip()
             next_poll_utc = datetime.strptime(date_time, '%Y-%m-%d %H:%M:%S')
     return bootstrap_status, last_poll_success, next_poll_utc
+
+def update_dsms_url(conf_file, new_url):
+    '''
+    Update the dSMS URL in the given config file by looking for line starting with FullHttpsDsmsUrl pattern
+    '''
+    conf_file_t = open(conf_file, "r+")
+    contents = conf_file_t.read()
+    if new_url not in contents:
+        new_contents = re.sub("FullHttpsDsmsUrl=.*", "FullHttpsDsmsUrl="+new_url, contents)
+        conf_file_t.seek(0)
+        conf_file_t.write(new_contents)
+    conf_file_t.close()
+    return
+
+def fix_endpoint_for_cloud(cloud):
+    '''
+    Identify the correct URL pattern for dSMS endpoints in national clouds 
+    '''
+    # Convert cloudtype to lowercase for case-insensitive string comparison
+    if cloud.lower() == "FairFax".lower():
+        url_pattern = "https://global-dsms.dsms.core.usgovcloudapi.net"
+    elif cloud.lower() == "BlackForest".lower():
+        url_pattern = "https://global-dsms.dsms.core.cloudapi.de"
+    elif cloud.lower() == "Mooncake".lower():
+        url_pattern = "https://global-dsms.dsms.core.chinacloudapi.cn"
+    else:
+        logger.log_error("CloudType "+cloud+" not listed!")
+        return False
+    logger.log_info("dSMS endpoint for "+cloud+" is "+url_pattern)
+    # Change URL pattern in the ACMS config file
+    update_dsms_url(acms_conf, url_pattern)
+    # Change URL pattern in the original ACMS config file 
+    update_dsms_url(acms_conf_ori, url_pattern)
+    return True
 
 def check_and_modify_endpoint():
     '''
@@ -105,8 +146,8 @@ def check_and_modify_endpoint():
                         else:
                             logger.log_info("dSMS endpoint is set to regional and last poll was success")
                     else:
-                        if change_endpoint_to_regional(acms_conf, region):
-                            logger.log_debug("dSMS endpoint changed from global to regional")
+                        change_endpoint_to_regional(acms_conf, region)
+                        logger.log_debug("dSMS endpoint changed from global to regional")
                 else:
                     logger.log_debug("Skipping dSMS endpoint modification because next poll event is approaching")
                 alarm = duration+time_margin
@@ -117,13 +158,13 @@ def check_and_modify_endpoint():
                     if restore_acms_config_file():
                         logger.log_debug("dSMS endpoint changed from regional to global")
                 else:
-                    if change_endpoint_to_regional(acms_conf, region):
-                       logger.log_debug("dSMS endpoint changed from global to regional")
+                    change_endpoint_to_regional(acms_conf, region)
+                    logger.log_debug("dSMS endpoint changed from global to regional")
                 time.sleep(bootstrap_alarm)
         else:
             # Has not been bootstrapped
-            if change_endpoint_to_regional(acms_conf, region):
-                logger.log_debug("dSMS endpoint changed from global to regional")
+            change_endpoint_to_regional(acms_conf, region)
+            logger.log_debug("dSMS endpoint changed from global to regional")
             time.sleep(bootstrap_alarm)
 
 if __name__ == '__main__':
@@ -132,4 +173,9 @@ if __name__ == '__main__':
         time.sleep(60)
         logger.log_info("Waiting for bootstrap cert")
 
+    cloud = get_device_cloudtype()
+    if cloud.lower() != "Public".lower():
+        if not fix_endpoint_for_cloud(cloud):
+            logger.log_error("Fixing endpoint for cloudtype "+cloud+" failed!")
+            quit()
     check_and_modify_endpoint()
