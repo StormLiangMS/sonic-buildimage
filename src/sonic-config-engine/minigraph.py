@@ -626,8 +626,9 @@ def parse_meta(meta, hname):
                     syslog_servers = value_group
                 elif name == "TacacsServer":
                     tacacs_servers = value_group
+                    mgmt_routes.extend(value_group)
                 elif name == "ForcedMgmtRoutes":
-                    mgmt_routes = value_group
+                    mgmt_routes.extend(value_group)
                 elif name == "ErspanDestinationIpv4":
                     erspan_dst = value_group
                 elif name == "DeploymentId":
