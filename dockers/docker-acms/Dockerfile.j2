@@ -6,6 +6,20 @@ ARG docker_container_name
 # Make apt-get non-interactive
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Clean documentation in FROM image
+RUN find /usr/share/doc -depth \( -type f -o -type l \) ! -name copyright | xargs rm || true
+
+# Clean doc directories that are empty or only contain empty directories
+RUN while [ -n "$(find /usr/share/doc -depth -type d -empty -print -exec rmdir {} +)" ]; do :; done
+RUN rm -rf               \
+    /usr/share/man/*     \
+    /usr/share/groff/*   \
+    /usr/share/info/*    \
+    /usr/share/lintian/* \
+    /usr/share/linda/*   \
+    /var/cache/man/*     \
+    /usr/share/locale/*
+
 # Update apt's cache of available packages
 RUN apt-get update &&       \
     apt-get install -f -y   \
@@ -18,7 +32,6 @@ RUN apt-get update &&       \
         libacl1             \
         libuuid1            \
         libxml2             \
-        vim                 \
         python-pip
 
 {% if docker_acms_debs.strip() -%}
@@ -67,6 +80,9 @@ RUN apt-get clean -y      && \
     apt-get autoclean -   && \
     apt-get autoremove -y && \
     rm -rf /debs
+RUN rm -rf /var/lib/apt/lists/*
+
+RUN rm -rf /tmp/*
 
 COPY ["start.sh", "cert_converter.py", "dSMS_endpoint_modifier.py", "/usr/bin/"]
 COPY ["supervisord.conf", "/etc/supervisor/"]
