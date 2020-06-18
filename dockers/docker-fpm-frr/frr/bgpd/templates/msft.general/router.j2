@@ -1,0 +1,44 @@
+{% macro general_routing(template_name) %}
+{% set device_type = CONFIG_DB__DEVICE_METADATA['localhost']['type'] %}
+{% set neighbor_type = CONFIG_DB__DEVICE_NEIGHBOR_METADATA[bgp_session['name']]['type'] %}
+{% set neighbor_deployment_id = CONFIG_DB__DEVICE_NEIGHBOR_METADATA[bgp_session['name']]['deployment_id'] %}
+{% set path_template = "bgpd/templates/msft.general/%s/" + template_name + ".conf.j2" %}
+{% if neighbor_addr | ipv4 %}
+{%     if device_type == 'MgmtToRRouter' %}
+{%         include path_template % "v4.mgmttor" %}
+{%     elif device_type == 'ToRRouter' %}
+{%         include path_template % "v4.tor" %}
+{%     elif device_type == 'LeafRouter' %}
+{%         if neighbor_type == 'SpineRouter' %}
+{%             include path_template % "v4.leaf.spine" %}
+{%         elif neighbor_type == 'ToRRouter' %}
+{%             if neighbor_deployment_id is defined and neighbor_deployment_id == '26' %}
+{%                 include path_template % "v4.leaf.tor.tycoon" %}
+{%             else %}
+{%                 include path_template % "v4.leaf.tor.all" %}
+{%             endif %}
+{%         elif neighbor_type == 'MseeRouter' %}
+{%             include path_template % "v4.leaf.msee" %}
+{%         endif %}
+{%     endif %}
+{% endif %}
+{% if neighbor_addr | ipv6 %}
+{%     if device_type == 'MgmtToRRouter' %}
+{%         include path_template % "v6.mgmttor" %}
+{%     elif device_type == 'ToRRouter' %}
+{%         include path_template % "v6.tor" %}
+{%     elif device_type == 'LeafRouter' %}
+{%         if neighbor_type == 'SpineRouter' %}
+{%             include path_template % "v6.leaf.spine" %}
+{%         elif neighbor_type == 'ToRRouter' %}
+{%             if neighbor_deployment_id is defined and neighbor_deployment_id == '26' %}
+{%                 include path_template % "v6.leaf.tor.tycoon" %}
+{%             else %}
+{%                 include path_template % "v6.leaf.tor.all" %}
+{%             endif %}
+{%         elif neighbor_type == 'MseeRouter' %}
+{%             include path_template % "v6.leaf.msee" %}
+{%         endif %}
+{%     endif %}
+{% endif %}
+{% endmacro %}

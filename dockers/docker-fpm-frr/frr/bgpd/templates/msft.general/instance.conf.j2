@@ -1,0 +1,15 @@
+!
+! template: bgpd/templates/general/instance.conf.j2
+!
+{% from "bgpd/templates/msft.general/router.j2" import general_routing with context %}
+{% set need_to_set_timers = (bgp_session['keepalive'] is defined and bgp_session['keepalive'] | int != 60) or
+                            (bgp_session['holdtime'] is defined  and bgp_session['holdtime']  | int != 180) %}
+{% set need_to_shutdown = bgp_session.has_key('admin_status') and bgp_session['admin_status'] == 'down' or
+                          not bgp_session.has_key('admin_status') and
+                          CONFIG_DB__DEVICE_METADATA['localhost'].has_key('default_bgp_status') and
+                          CONFIG_DB__DEVICE_METADATA['localhost']['default_bgp_status'] == 'down' and
+                          CONFIG_DB__DEVICE_METADATA.localhost.type == 'LeafRouter' %}
+{{ general_routing("instance") }}
+!
+! end of template: bgpd/templates/general/instance.conf.j2
+!

@@ -1,0 +1,37 @@
+!
+! template: bgpd/templates/msft.general/v6.leaf.msee/policy.conf.j2
+!
+ip community-list standard LEAK_COMMUNITY permit 8075:10400
+!
+ipv6 prefix-list DEFAULT_IPV6 permit ::/0
+ipv6 prefix-list IPV6_64_ONLY permit ::/0 ge 64 le 64
+!
+route-map FROM_TIER0_V6 permit 10
+  match community UPSTREAM_PREFIX
+  match ipv6 address prefix-list DEFAULT_IPV6
+!
+route-map FROM_TIER0_V6 permit 20
+  match community LEAK_COMMUNITY
+  match ipv6 address prefix-list IPV6_64_ONLY
+  set comm-list LEAK_COMMUNITY delete
+!
+route-map FROM_TIER0_V6 permit 30
+  match ipv6 address prefix-list IPV6_64_ONLY
+!
+route-map FROM_TIER0_V6 deny 1000
+!
+route-map TO_TIER0_V6 permit 10
+ match community UPSTREAM_PREFIX
+ match ipv6 address prefix-list DEFAULT_IPV6
+!
+route-map TO_TIER0_V6 permit 20
+ match community LEAK_COMMUNITY
+!
+route-map TO_TIER0_V6 permit 30
+ match community UPSTREAM_PREFIX
+ set community no-export additive
+!
+route-map TO_TIER0_V6 permit 1000
+!
+! end of template: bgpd/templates/msft.general/v6.leaf.msee/policy.conf.j2
+!

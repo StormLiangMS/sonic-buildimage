@@ -1,0 +1,8 @@
+!
+! template: bgpd/templates/general/peer-group.conf.j2
+!
+{% from "bgpd/templates/msft.general/router.j2" import general_routing with context %}
+{{ general_routing("peer-group") }}
+!
+! end of template: bgpd/templates/general/peer-group.conf.j2
+!
