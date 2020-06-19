@@ -1004,7 +1004,7 @@ def parse_xml(filename, platform=None, port_config_file=None, asic_name=None):
     results['BGP_MONITORS'] = bgp_monitors
     results['BGP_PEER_RANGE'] = bgp_peers_with_range
     results['BGP_INTERNAL_NEIGHBOR'] = bgp_internal_sessions
-    if mgmt_routes:
+    if mgmt_routes and mgmt_intf and len(mgmt_intf):
         # TODO: differentiate v4 and v6
         mgmt_intf.itervalues().next()['forced_mgmt_routes'] = mgmt_routes
     results['MGMT_PORT'] = {}
