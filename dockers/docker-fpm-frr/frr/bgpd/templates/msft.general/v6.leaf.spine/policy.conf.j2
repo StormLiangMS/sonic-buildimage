@@ -3,6 +3,10 @@
 !
 ip community-list standard UPSTREAM_PREFIX permit 8075:54000
 !
+!
+route-map FROM_TIER2_V6 permit 1
+ set ipv6 next-hop prefer-global
+!
 route-map FROM_TIER2_V6 permit 10
  set community 8075:54000 additive
 !

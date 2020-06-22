@@ -15,6 +15,9 @@ route-map TO_TYCOON_ER_V6 deny 10000
 route-map FROM_TYCOON_ER_V6 deny 100
   match ipv6 address prefix-list DEFAULT_IPV6
 !
+route-map FROM_TYCOON_ER_V6 permit 1
+ set ipv6 next-hop prefer-global
+!
 route-map FROM_TYCOON_ER_V6 permit 200
   match community TYCOON_ER_COMMUNITY
   match ipv6 address prefix-list IPV6_64_ONLY
