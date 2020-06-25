@@ -1,0 +1,18 @@
+!
+! template: bgpd/templates/msft.general/v6.leaf.tor.dnsagg/peer-group.conf.j2
+!
+  neighbor DNS_AGG_V6 peer-group
+  address-family ipv6 unicast
+    neighbor DNS_AGG_V6 activate
+    neighbor DNS_AGG_V6 soft-reconfiguration inbound
+    neighbor DNS_AGG_V6 route-map FROM_DNS_AGG_V6 in
+    neighbor DNS_AGG_V6 route-map TO_DNS_AGG_V6 out
+    neighbor DNS_AGG_V6 send-community
+    neighbor DNS_AGG_V6 maximum-prefix 20 50
+{% if constants.bgp.enable_bbr %}
+    neighbor DNS_AGG_V6 allowas-in 1
+{% endif %}
+  exit-address-family
+!
+! end of template: bgpd/templates/msft.general/v6.leaf.tor.dnsagg/peer-group.conf.j2
+!

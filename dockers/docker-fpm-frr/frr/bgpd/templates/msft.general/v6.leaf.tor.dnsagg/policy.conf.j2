@@ -1,0 +1,21 @@
+!
+! template: bgpd/templates/msft.general/v6.leaf.tor.dnsagg/policy.conf.j2
+!
+ipv6 prefix-list DEFAULT_IPV6 permit ::/0
+ipv6 prefix-list IPV6_60_OR_LONGER permit ::/0 ge 60
+!
+route-map TO_DNS_AGG_V6 permit 100
+  match ipv6 address prefix-list DEFAULT_IPV6
+!
+route-map TO_DNS_AGG_V6 deny 10000
+!
+route-map FROM_DNS_AGG_V6 deny 100
+  match ipv6 address prefix-list DEFAULT_IPV6
+!
+route-map FROM_DNS_AGG_V6 permit 200
+  match ipv6 address prefix-list IPV6_60_OR_LONGER
+!
+route-map FROM_DNS_AGG_V6 deny 10000
+!
+! end of template: bgpd/templates/msft.general/v6.leaf.tor.dnsagg/policy.conf.j2
+!
