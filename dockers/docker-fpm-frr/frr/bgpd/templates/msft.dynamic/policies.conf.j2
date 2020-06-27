@@ -3,9 +3,9 @@
 !
 {% if CONFIG_DB__DEVICE_METADATA['localhost']['type'] == 'ToRRouter' %}
 !
-route-map FROM_BGP_SPEAKER_V4 permit 10
+route-map FROM_BGP_SPEAKER permit 10
 !
-route-map TO_BGP_SPEAKER_V4 deny 10
+route-map TO_BGP_SPEAKER deny 10
 !
 {% endif %}
 !
