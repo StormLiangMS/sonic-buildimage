@@ -1,0 +1,7 @@
+{
+    "bgp_asn": "555",
+    "neighbor_addr": "10.20.30.40",
+    "bgp_session": {
+        "name": "monitor"
+    }
+}

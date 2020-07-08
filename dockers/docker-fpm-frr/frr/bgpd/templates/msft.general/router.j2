@@ -33,7 +33,7 @@
 {%         elif neighbor_type == 'ToRRouter' %}
 {%             if neighbor_deployment_id is defined and neighbor_deployment_id == '26' %}
 {%                 include path_template % "v6.leaf.tor.tycoon" %}
-			   elif neighbor_deployment_id is defined and neighbor_deployment_id == '19' %}
+{%             elif neighbor_deployment_id is defined and neighbor_deployment_id == '19' %}
 {%                 include path_template % "v6.leaf.tor.dnsagg" %}
 {%             else %}
 {%                 include path_template % "v6.leaf.tor.all" %}

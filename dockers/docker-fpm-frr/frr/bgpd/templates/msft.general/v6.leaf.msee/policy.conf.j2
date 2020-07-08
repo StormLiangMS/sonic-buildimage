@@ -2,6 +2,7 @@
 ! template: bgpd/templates/msft.general/v6.leaf.msee/policy.conf.j2
 !
 ip community-list standard LEAK_COMMUNITY permit 8075:10400
+ip community-list standard UPSTREAM_PREFIX permit 8075:54000
 !
 ipv6 prefix-list DEFAULT_IPV6 permit ::/0
 ipv6 prefix-list IPV6_64_ONLY permit ::/0 ge 64 le 64
