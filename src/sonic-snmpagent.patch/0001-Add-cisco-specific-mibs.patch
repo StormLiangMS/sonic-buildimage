@@ -11,26 +11,26 @@ Subject: [PATCH 1/2] Add cisco specific mibs
  create mode 100644 src/sonic_ax_impl/mibs/vendor/cisco/mgmt.py
 
 diff --git a/src/sonic_ax_impl/main.py b/src/sonic_ax_impl/main.py
-index 682feca..7d176ce 100644
+index 763b4b0..9c47bdc 100644
 --- a/src/sonic_ax_impl/main.py
 +++ b/src/sonic_ax_impl/main.py
-@@ -31,6 +31,7 @@ class SonicMIB(
-     ieee802_1ab.LLDPLocPortTable,
+@@ -35,6 +35,7 @@ class SonicMIB(
      ieee802_1ab.LLDPRemTable,
+     ieee802_1ab.LLDPRemManAddrTable,
      dell.force10.SSeriesMIB,
 +    cisco.mgmt.CiscoSystemExtMIB,
+     cisco.bgp4.CiscoBgp4MIB,
      cisco.ciscoPfcExtMIB.cpfcIfTable,
      cisco.ciscoPfcExtMIB.cpfcIfPriorityTable,
-     cisco.ciscoSwitchQosMIB.csqIfQosGroupStatsTable,
 diff --git a/src/sonic_ax_impl/mibs/vendor/cisco/__init__.py b/src/sonic_ax_impl/mibs/vendor/cisco/__init__.py
-index 4c63170..822ac73 100644
+index b660cdc..785f20b 100644
 --- a/src/sonic_ax_impl/mibs/vendor/cisco/__init__.py
 +++ b/src/sonic_ax_impl/mibs/vendor/cisco/__init__.py
 @@ -1,3 +1,4 @@
 +from . import mgmt
+ from . import bgp4
  from . import ciscoPfcExtMIB
  from . import ciscoSwitchQosMIB
- from . import ciscoEntityFruControlMIB
 diff --git a/src/sonic_ax_impl/mibs/vendor/cisco/mgmt.py b/src/sonic_ax_impl/mibs/vendor/cisco/mgmt.py
 new file mode 100644
 index 0000000..10c0a3d
