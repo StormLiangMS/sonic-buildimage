@@ -79,12 +79,6 @@ ENABLE_ORGANIZATION_EXTENSIONS = y
 #SONIC_DEBUGGING_ON = y
 #SONIC_PROFILING_ON = y
 
-<<<<<<< HEAD
-=======
-# ENABLE_SYSTEM_TELEMETRY - build docker-sonic-telemetry for system telemetry support
-ENABLE_SYSTEM_TELEMETRY = n
-
->>>>>>> 1eaeddf0d... Disable Telemetry till the cerificate issue is resolved.
 # DEFAULT_KERNEL_PROCURE_METHOD - default method for obtaining kernel
 #   build:    build kernel from source
 #   download: download pre-built kernel from Azure storage.
@@ -102,42 +96,25 @@ FRR_USER_GID = 300
 # Default VS build memory preparation
 DEFAULT_VS_PREPARE_MEM = yes
 
-<<<<<<< HEAD
 
 # INCLUDE_SYSTEM_TELEMETRY - build docker-sonic-telemetry for system telemetry support
 INCLUDE_SYSTEM_TELEMETRY = y
 
 # INCLUDE_SFLOW - build docker-sflow for sFlow support
-INCLUDE_SFLOW = y
+INCLUDE_SFLOW = n
 
 # INCLUDE_MGMT_FRAMEWORK - build docker-sonic-mgmt-framework for CLI and REST server support
-INCLUDE_MGMT_FRAMEWORK = y
-=======
-# ENABLE_SYSTEM_SFLOW - build docker-sonic-sflow for sFlow support
-ENABLE_SFLOW = n
-
-# ENABLE_MGMT_FRAMEWORK - build docker-sonic-mgt-framework for CLI and REST server support
-ENABLE_MGMT_FRAMEWORK = n
->>>>>>> 979266d4b... Disable NAT/SFLOW/MGMT Docker for Internal.
+INCLUDE_MGMT_FRAMEWORK = n
 
 # INCLUDE_RESTAPI - build docker-sonic-restapi for configuring the switch using REST APIs
 INCLUDE_RESTAPI = n
 
-<<<<<<< HEAD
 # INCLUDE_NAT - build docker-nat for nat support
-INCLUDE_NAT = y
-=======
-# ENABLE_NAT - build docker-sonic-nat for nat support
-ENABLE_NAT = n
->>>>>>> 979266d4b... Disable NAT/SFLOW/MGMT Docker for Internal.
+INCLUDE_NAT = n
 
 # INCLUDE_KUBERNETES - if set to y kubernetes packages are installed to be able to
 # run as worker node in kubernetes cluster.
-<<<<<<< HEAD
-INCLUDE_KUBERNETES = n
-=======
-INSTALL_KUBERNETES = y
->>>>>>> 1eaeddf0d... Disable Telemetry till the cerificate issue is resolved.
+INCLUDE_KUBERNETES = y
 
 # KUBERNETES_VERSION - Set to the required version.
 # K8s_GCR_IO_PAUSE_VERSION - Version of k8s universal pause container image
@@ -147,13 +124,5 @@ INSTALL_KUBERNETES = y
 KUBERNETES_VERSION = 1.18.6
 KUBERNETES_CNI_VERSION = 0.8.6
 K8s_GCR_IO_PAUSE_VERSION = 3.2
-<<<<<<< HEAD
-
-=======
-K8s_CNI_FLANNEL_VERSION = v0.12.0
-<<<<<<< HEAD
->>>>>>> 979266d4b... Disable NAT/SFLOW/MGMT Docker for Internal.
-=======
-# ENABLE_ACMS - build docker-acms for managing certificates on the device
-ENABLE_ACMS = y
->>>>>>> a410c3021... Merged PR 2761709: Introduce ACMS container
+# INCLUDE_ACMS - build docker-acms for managing certificates on the device
+INCLUDE_ACMS = y
