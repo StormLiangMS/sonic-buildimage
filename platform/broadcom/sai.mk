@@ -4,9 +4,9 @@ BRCM_SAI_DEV = libsaibcm-dev_3.7.6.1-1_amd64.deb
 $(eval $(call add_derived_package,$(BRCM_SAI),$(BRCM_SAI_DEV)))
 $(BRCM_SAI_DEV)_URL = "https://sonicstorage.blob.core.windows.net/packages/bcmsai/3.7/libsaibcm-dev_3.7.6.1-1_amd64.deb?sv=2015-04-05&sr=b&sig=aUS4ZFCfD%2Bct29T%2B0xJAtFHfmtX1dTTsxKTyNtOw1O4%3D&se=2030-08-03T23%3A02%3A56Z&sp=r"
 
-BRCM_SAI_DBG = libsaibcm-dbg_3.7.5.1-2_amd64.deb
+BRCM_SAI_DBG = libsaibcm-dbg_3.7.5.1-3_amd64.deb
 $(eval $(call add_derived_package,$(BRCM_SAI),$(BRCM_SAI_DBG)))
-$(BRCM_SAI_DBG)_URL = "https://sonicstorage.blob.core.windows.net/packages/bcmsai/3.7/libsaibcm-dbg_3.7.5.1-2_amd64.deb?sv=2015-04-05&sr=b&sig=2qL18LS%2Fu0Qbmqatd7Nr8y%2FB3kprQ1v6CdaUuhR18jI%3D&se=2034-03-21T06%3A00%3A31Z&sp=r"
+$(BRCM_SAI_DBG)_URL = "https://sonicstorage.blob.core.windows.net/packages/bcmsai/3.7/libsaibcm-dbg_3.7.5.1-3_amd64.deb?sv=2015-04-05&sr=b&sig=W8O%2F9BNDsvZ82OKOPn9j94eQPqry4Z1ymDXbT23%2BODs%3D&se=2034-04-19T18%3A38%3A37Z&sp=r"
 
 SONIC_ONLINE_DEBS += $(BRCM_SAI)
 $(BRCM_SAI_DEV)_DEPENDS += $(BRCM_SAI)
