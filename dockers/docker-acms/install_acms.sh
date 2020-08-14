@@ -9,7 +9,7 @@ apt-get update -o Dir::Etc::sourcelist="sources.list.d/msftUbuntu1804Prod.list" 
 chown -R _apt:root /acms
 
 # Download the ACMS client
-apt-get download acms-client=5.8
+apt-get download acms-client=5.13
 dpkg --unpack acms-client*.deb
 
 rm acms-client*.deb
