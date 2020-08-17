@@ -3,6 +3,7 @@
 !
 ip community-list standard TYCOON_ER_COMMUNITY permit 12076:10450
 ip community-list standard TYCOON_ER_COMMUNITY permit 8075:10451
+ip community-list standard SDN_APPLIANCE_COMMUNITY permit 8075:9302
 !
 ipv6 prefix-list DEFAULT_IPV6 permit ::/0
 ipv6 prefix-list IPV6_64_ONLY permit ::/0 ge 64 le 64
@@ -20,6 +21,10 @@ route-map FROM_TYCOON_ER_V6 permit 1
 !
 route-map FROM_TYCOON_ER_V6 permit 200
   match community TYCOON_ER_COMMUNITY
+  match ipv6 address prefix-list IPV6_64_ONLY
+!
+route-map FROM_TYCOON_ER_V6 permit 300
+  match community SDN_APPLIANCE_COMMUNITY
   match ipv6 address prefix-list IPV6_64_ONLY
 !
 route-map FROM_TYCOON_ER_V6 deny 10000
