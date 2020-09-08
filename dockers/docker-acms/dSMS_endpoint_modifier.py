@@ -6,7 +6,7 @@ fall-back to global endpoint and vice-versa.
 '''
 import os, subprocess, time, re
 from datetime import datetime, timedelta
-from sonic_daemon_base.daemon_base import Logger
+from sonic_py_common import logger
 from swsscommon import swsscommon
 
 # Bootstrap cert
@@ -25,7 +25,7 @@ bootstrap_alarm = 30
 # Redis DB information
 REDIS_TIMEOUT_MS = 0
 
-logger = Logger()
+helper_logger = logger.Logger()
 
 def get_device_region():
     config_db = swsscommon.DBConnector("CONFIG_DB", REDIS_TIMEOUT_MS, True)
@@ -49,7 +49,7 @@ def restore_acms_config_file():
     response = subprocess.Popen([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     stdout, stderr = response.communicate()
     if (response.returncode != 0):
-        logger.log_error(stderr)
+        helper_logger.log_error(stderr)
         return False
     else:
         return True
@@ -109,9 +109,9 @@ def fix_endpoint_for_cloud(cloud):
     elif cloud.lower() == "Mooncake".lower():
         url_pattern = "https://global-dsms.dsms.core.chinacloudapi.cn"
     else:
-        logger.log_error("CloudType "+cloud+" not listed!")
+        helper_logger.log_error("CloudType "+cloud+" not listed!")
         return False
-    logger.log_info("dSMS endpoint for "+cloud+" is "+url_pattern)
+    helper_logger.log_info("dSMS endpoint for "+cloud+" is "+url_pattern)
     # Change URL pattern in the ACMS config file
     update_dsms_url(acms_conf, url_pattern)
     # Change URL pattern in the original ACMS config file 
@@ -142,40 +142,40 @@ def check_and_modify_endpoint():
                         if not last_poll_success:
                             # Last poll was unsuccessful, so try fall-back URL
                             if restore_acms_config_file():
-                                logger.log_debug("dSMS endpoint changed from regional to global")
+                                helper_logger.log_debug("dSMS endpoint changed from regional to global")
                         else:
-                            logger.log_info("dSMS endpoint is set to regional and last poll was success")
+                            helper_logger.log_info("dSMS endpoint is set to regional and last poll was success")
                     else:
                         change_endpoint_to_regional(acms_conf, region)
-                        logger.log_debug("dSMS endpoint changed from global to regional")
+                        helper_logger.log_debug("dSMS endpoint changed from global to regional")
                 else:
-                    logger.log_debug("Skipping dSMS endpoint modification because next poll event is approaching")
+                    helper_logger.log_debug("Skipping dSMS endpoint modification because next poll event is approaching")
                 alarm = duration+time_margin
                 time.sleep(alarm.total_seconds())
             else:
                 # Bootstrap attempt failed
                 if regional:
                     if restore_acms_config_file():
-                        logger.log_debug("dSMS endpoint changed from regional to global")
+                        helper_logger.log_debug("dSMS endpoint changed from regional to global")
                 else:
                     change_endpoint_to_regional(acms_conf, region)
-                    logger.log_debug("dSMS endpoint changed from global to regional")
+                    helper_logger.log_debug("dSMS endpoint changed from global to regional")
                 time.sleep(bootstrap_alarm)
         else:
             # Has not been bootstrapped
             change_endpoint_to_regional(acms_conf, region)
-            logger.log_debug("dSMS endpoint changed from global to regional")
+            helper_logger.log_debug("dSMS endpoint changed from global to regional")
             time.sleep(bootstrap_alarm)
 
 if __name__ == '__main__':
     # Sleep until bootstrap cert is available
     while not os.path.isfile(boostrap_cert):
         time.sleep(60)
-        logger.log_info("Waiting for bootstrap cert")
+        helper_logger.log_info("Waiting for bootstrap cert")
 
     cloud = get_device_cloudtype()
     if cloud.lower() != "Public".lower():
         if not fix_endpoint_for_cloud(cloud):
-            logger.log_error("Fixing endpoint for cloudtype "+cloud+" failed!")
+            helper_logger.log_error("Fixing endpoint for cloudtype "+cloud+" failed!")
             quit()
     check_and_modify_endpoint()
