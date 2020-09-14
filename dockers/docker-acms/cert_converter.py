@@ -20,13 +20,14 @@ password_length = 64
 # Duration between polling for cert changes in seconds
 polling_frequency = 3600
 
-helper_logger = logger.Logger()
+sonic_logger = logger.Logger()
+sonic_logger.set_min_log_priority_info()
 
 def execute_cmd(cmd):
     response = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = response.communicate()
     if (response.returncode != 0):
-        helper_logger.log_error(stderr, True)
+        sonic_logger.log_error(stderr, True)
         return False
     return True
 
@@ -55,19 +56,19 @@ def link_to_latest_cert(acms_certs_path, certs_path):
     notify_files = [f for f in os.listdir(acms_certs_path) if (os.path.isfile(os.path.join(acms_certs_path, f)) and (".notify" in f))]
     for n_file in notify_files:
         cert_name = n_file.split(".")[0]
-        helper_logger.log_info("cert_converter : link_to_latest_cert : Linking cert "+cert_name+".pfx")
+        sonic_logger.log_info("cert_converter : link_to_latest_cert : Linking cert "+cert_name+".pfx")
         cert_ver = open(acms_certs_path+n_file, "r").readline().split(acms_certs_path)[1].split(".")[2]
         if certs_path+cert_name+".crt."+cert_ver not in targets:
             cmd = "ln -s -f "+certs_path+cert_name+".crt."+cert_ver+" "+certs_path+cert_name+".crt"
-            helper_logger.log_notice("cert_converter : link_to_latest_cert : "+cmd, True)
+            sonic_logger.log_notice("cert_converter : link_to_latest_cert : "+cmd, True)
             if not execute_cmd(cmd):
                 return False
         if certs_path+cert_name+".key."+cert_ver not in targets:
             cmd = "ln -s -f "+certs_path+cert_name+".key."+cert_ver+" "+certs_path+cert_name+".key"
-            helper_logger.log_notice("cert_converter : link_to_latest_cert : "+cmd, True)
+            sonic_logger.log_notice("cert_converter : link_to_latest_cert : "+cmd, True)
             if not execute_cmd(cmd):
                 return False
-        helper_logger.log_info("cert_converter : link_to_latest_cert : Finished linking cert "+cert_name+".pfx")
+        sonic_logger.log_info("cert_converter : link_to_latest_cert : Finished linking cert "+cert_name+".pfx")
     return True
 
 def convert_certs(acms_certs_path, certs_path, password_length):
@@ -79,14 +80,14 @@ def convert_certs(acms_certs_path, certs_path, password_length):
         for cert_name in downloaded_cert_names:
             # Start converting those certs which have not been converted
             if cert_name not in existing_cert_names:
-                helper_logger.log_info("cert_converter : convert_certs : Start converting "+cert_name)
+                sonic_logger.log_info("cert_converter : convert_certs : Start converting "+cert_name)
                 name = cert_name.split(".")[0]
                 ver = cert_name.split(".")[1]
                 # Extract the certificate from the pfx file
                 cmd = "openssl pkcs12 -clcerts -nokeys -in "+acms_certs_path+name+".pfx."+ver+" -out "+certs_path+name+".crt."+ver+" -password pass: -passin pass:"
-                helper_logger.log_info("cert_converter : convert_certs : "+cmd)
+                sonic_logger.log_info("cert_converter : convert_certs : "+cmd)
                 if not execute_cmd(cmd):
-                    helper_logger.log_error("cert_converter : convert_certs : Extracting crt from pfx failed!", True)
+                    sonic_logger.log_error("cert_converter : convert_certs : Extracting crt from pfx failed!", True)
                     return False                
                 # Generate a random password for encrypting the private key
                 string_choice = string.ascii_uppercase + string.ascii_lowercase + string.digits
@@ -94,46 +95,46 @@ def convert_certs(acms_certs_path, certs_path, password_length):
                 # Extract the private key from the pfx file
                 cmd = "openssl pkcs12 -nocerts -in "+acms_certs_path+name+".pfx."+ver+" -out "+certs_path+"private.key -password pass: -passin pass: -passout pass:"+random_password
                 if not execute_cmd(cmd):
-                    helper_logger.log_error("cert_converter : convert_certs : Creating private key from pfx failed!", True)
+                    sonic_logger.log_error("cert_converter : convert_certs : Creating private key from pfx failed!", True)
                     return False
                 # Decrypt the private key
                 cmd = "openssl rsa -in "+certs_path+"private.key -out "+certs_path+name+".key."+ver+" -passin pass:"+random_password
                 if not execute_cmd(cmd):
-                    helper_logger.log_error("cert_converter : convert_certs : Extracting key from pfx failed!", True)
+                    sonic_logger.log_error("cert_converter : convert_certs : Extracting key from pfx failed!", True)
                     return False
                 cmd = "rm "+certs_path+"private.key"
                 if not execute_cmd(cmd):
-                    helper_logger.log_error("cert_converter : convert_certs : Removing private key failed!", True)
+                    sonic_logger.log_error("cert_converter : convert_certs : Removing private key failed!", True)
                     return False
                 new_cert_flag = True
-                helper_logger.log_info("cert_converter : convert_certs : Finished converting "+cert_name)
+                sonic_logger.log_info("cert_converter : convert_certs : Finished converting "+cert_name)
             else:
-                helper_logger.log_info("cert_converter : convert_certs : "+cert_name+" already converted")
+                sonic_logger.log_info("cert_converter : convert_certs : "+cert_name+" already converted")
         if new_cert_flag:
             if not (link_to_latest_cert(acms_certs_path, certs_path)):
-                helper_logger.log_error("cert_converter : convert_certs : linking certs failed!", True)
+                sonic_logger.log_error("cert_converter : convert_certs : linking certs failed!", True)
                 return False
     else:
-        helper_logger.log_info("cert_converter : convert_certs : no certs downloaded")
+        sonic_logger.log_info("cert_converter : convert_certs : no certs downloaded")
     return True
 
 
 def main():
     while True:
-        helper_logger.log_info("cert_converter : main : Check if uber_notify_file is present")
+        sonic_logger.log_info("cert_converter : main : Check if uber_notify_file is present")
         if os.path.isfile(uber_notify_file_path):
-            helper_logger.log_info("cert_converter : main : uber_notify_file found, converting all certs...")
+            sonic_logger.log_info("cert_converter : main : uber_notify_file found, converting all certs...")
             if not convert_certs(acms_certs_path, certs_path, password_length):
-                helper_logger.log_error("cert_converter : main : Cert conversion failed!")
+                sonic_logger.log_error("cert_converter : main : Cert conversion failed!")
             break
         else:
             time.sleep(60)
 
-    helper_logger.log_info("cert_converter : main : Start polling every 1hr...")
+    sonic_logger.log_info("cert_converter : main : Start polling every 1hr...")
     while True:
-        helper_logger.log_notice("cert_converter : main : Checking for cert changes...")
+        sonic_logger.log_notice("cert_converter : main : Checking for cert changes...")
         if not convert_certs(acms_certs_path, certs_path, password_length):
-            helper_logger.log_error("cert_converter : main : Cert conversion failed!")
+            sonic_logger.log_error("cert_converter : main : Cert conversion failed!")
         time.sleep(polling_frequency)
 
 if __name__ == "__main__":
