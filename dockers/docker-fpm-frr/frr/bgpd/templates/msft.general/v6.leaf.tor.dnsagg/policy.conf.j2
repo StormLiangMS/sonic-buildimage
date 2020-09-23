@@ -1,8 +1,11 @@
 !
 ! template: bgpd/templates/msft.general/v6.leaf.tor.dnsagg/policy.conf.j2
 !
+bgp community-list standard DNS_VIP_COMMUNITY permit 8075:9303
+!
 ipv6 prefix-list DEFAULT_IPV6 permit ::/0
-ipv6 prefix-list IPV6_60_OR_LONGER permit ::/0 ge 60
+ipv6 prefix-list IPV6_64_ONLY permit ::/0 ge 64 le 64
+ipv6 prefix-list IPV6_60_OR_LONGER permit ::/0 ge 60 le 64
 !
 route-map TO_DNS_AGG_V6 permit 100
   match ipv6 address prefix-list DEFAULT_IPV6
@@ -13,7 +16,11 @@ route-map FROM_DNS_AGG_V6 deny 100
   match ipv6 address prefix-list DEFAULT_IPV6
 !
 route-map FROM_DNS_AGG_V6 permit 200
+  match community DNS_VIP_COMMUNITY
   match ipv6 address prefix-list IPV6_60_OR_LONGER
+!
+route-map FROM_DNS_AGG_V6 permit 300
+  match ipv6 address prefix-list IPV6_64_ONLY
 !
 route-map FROM_DNS_AGG_V6 deny 10000
 !
