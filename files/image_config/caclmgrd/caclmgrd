@@ -73,7 +73,7 @@ class ControlPlaneAclManager(daemon_base.DaemonBase):
         },
         "SSH": {
             "ip_protocols": ["tcp"],
-            "dst_ports": ["22"],
+            "dst_ports": ["22", "50051"], # Temporary hack to allow Streaming telemetry (50051) traffic,
             "multi_asic_ns_to_host_fwd":True
         }
     }
