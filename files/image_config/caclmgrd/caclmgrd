@@ -185,7 +185,7 @@ class ControlPlaneAclManager(daemon_base.DaemonBase):
         return tcp_flags_str
 
     def is_feature_present(self, feature_name):
-        feature_tb_info = self.config_db.get_table(self.FEATURE_TABLE)
+        feature_tb_info = self.config_db_map[''].get_table(self.FEATURE_TABLE)
         if feature_tb_info:
             for k, v in feature_tb_info.iteritems():
                 if feature_name == k:
@@ -193,7 +193,7 @@ class ControlPlaneAclManager(daemon_base.DaemonBase):
 
         return False
 
-    def generate_allow_restapi_iptables_commands(self):
+    def generate_allow_restapi_iptables_commands(self, namespace):
         # Following ranges from 6 regions are temporarily hardcoded and allowed for Bluebird Service
         src_ip_range = ["20.44.16.64/27", "13.66.141.96/27", "13.69.229.128/27", "52.162.110.128/27", "52.231.147.224/27", "40.74.146.224/27"]
 
@@ -205,9 +205,9 @@ class ControlPlaneAclManager(daemon_base.DaemonBase):
             for src_ip in src_ip_range:
                 ip_ntwrk = ipaddress.ip_network(unicode(src_ip,'utf-8'), strict=False)
                 if isinstance(ip_ntwrk, ipaddress.IPv4Network):
-                    allow_restapi_commands.append("iptables -A INPUT -s {} -p tcp --dport {} -j ACCEPT".format(src_ip, dport))
+                    allow_restapi_commands.append(self.iptables_cmd_ns_prefix[namespace] + "iptables -A INPUT -s {} -p tcp --dport {} -j ACCEPT".format(src_ip, dport))
                 else:
-                    allow_restapi_commands.append("ip6tables -A INPUT -s {} -p tcp --dport {} -j ACCEPT".format(src_ip, dport))
+                    allow_restapi_commands.append(self.iptables_cmd_ns_prefix[namespace] + "ip6tables -A INPUT -s {} -p tcp --dport {} -j ACCEPT".format(src_ip, dport))
 
         return allow_restapi_commands
 
@@ -425,7 +425,7 @@ class ControlPlaneAclManager(daemon_base.DaemonBase):
 
         # Add iptables/ip6tables commands to allow all restapi/http/https requests
         if self.is_feature_present("restapi"):
-            iptables_cmds += self.generate_allow_restapi_iptables_commands()
+            iptables_cmds += self.generate_allow_restapi_iptables_commands(namespace)
 
         # Get current ACL tables and rules from Config DB
         self._tables_db_info = self.config_db_map[namespace].get_table(self.ACL_TABLE)
