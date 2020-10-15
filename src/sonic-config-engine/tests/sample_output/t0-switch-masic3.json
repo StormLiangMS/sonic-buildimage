@@ -1,6 +1,8 @@
 [
     {
         "SWITCH_TABLE:switch": {
+            "vxlan_port": "65330",
+            "vxlan_router_mac": "00:12:34:56:78:9a",
             "ecmp_hash_seed": "13",
             "lag_hash_seed": "13",
             "fdb_aging_time": "600"
