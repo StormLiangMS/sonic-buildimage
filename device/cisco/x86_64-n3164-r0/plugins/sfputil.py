@@ -77,6 +77,11 @@ class SfpUtil(SfpUtilCisco):
         port_reset="/sys/class/mifpga/mifpga/qsfp_%d_reset/value" % (port_num+1)
         with open(port_reset, "w") as x_p_fp:
             x_p_fp.write("1")
+            x_p_fp.close()
+        time.sleep(1)
+        with open(port_reset, "w") as x_p_fp:
+            x_p_fp.write("0")
+            x_p_fp.close()
         return True
 
     def get_low_power_mode(self, port_num):
