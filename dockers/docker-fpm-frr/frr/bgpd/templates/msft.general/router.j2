@@ -6,12 +6,12 @@
 {% if neighbor_addr | ipv4 %}
 {%     if device_type == 'MgmtToRRouter' %}
 {%         include path_template % "v4.mgmttor" %}
-{%     elif device_type in ['ToRRouter', 'BackEndToRRouter'] %}
+{%     elif device_type == 'ToRRouter' %}
 {%         include path_template % "v4.tor" %}
-{%     elif device_type in ['LeafRouter', 'BackEndLeafRouter'] %}
+{%     elif device_type == 'LeafRouter' %}
 {%         if neighbor_type == 'SpineRouter' %}
 {%             include path_template % "v4.leaf.spine" %}
-{%         elif neighbor_type in ['ToRRouter', 'BackEndToRRouter'] %}
+{%         elif neighbor_type == 'ToRRouter' %}
 {%             if neighbor_deployment_id is defined and neighbor_deployment_id == '26' %}
 {%                 include path_template % "v4.leaf.tor.tycoon" %}
 {%             else %}
@@ -25,12 +25,12 @@
 {% if neighbor_addr | ipv6 %}
 {%     if device_type == 'MgmtToRRouter' %}
 {%         include path_template % "v6.mgmttor" %}
-{%     elif device_type in ['ToRRouter', 'BackEndToRRouter'] %}
+{%     elif device_type == 'ToRRouter' %}
 {%         include path_template % "v6.tor" %}
-{%     elif device_type in ['LeafRouter', 'BackEndLeafRouter'] %}
+{%     elif device_type == 'LeafRouter' %}
 {%         if neighbor_type == 'SpineRouter' %}
 {%             include path_template % "v6.leaf.spine" %}
-{%         elif neighbor_type in ['ToRRouter', 'BackEndToRRouter'] %}
+{%         elif neighbor_type == 'ToRRouter' %}
 {%             if neighbor_deployment_id is defined and neighbor_deployment_id == '26' %}
 {%                 include path_template % "v6.leaf.tor.tycoon" %}
 {%             elif neighbor_deployment_id is defined and neighbor_deployment_id == '19' %}
