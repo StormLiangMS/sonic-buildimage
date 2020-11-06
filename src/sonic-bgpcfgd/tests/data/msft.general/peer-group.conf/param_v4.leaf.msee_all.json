@@ -9,6 +9,9 @@
             "type": "MseeRouter"
         }
     },
+    "CONFIG_DB__BGP_BBR": {
+        "status": "enabled"
+    },
     "constants": {
         "bgp": {
             "enable_bbr": true

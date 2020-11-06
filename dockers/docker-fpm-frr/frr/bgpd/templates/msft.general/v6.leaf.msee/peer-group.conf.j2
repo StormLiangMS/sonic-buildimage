@@ -9,7 +9,7 @@
     neighbor TIER0_V6 route-map TO_TIER0_V6 out
     neighbor TIER0_V6 send-community
     neighbor TIER0_V6 maximum-prefix 8000 90 warning-only
-{% if constants.bgp.enable_bbr %}
+{% if CONFIG_DB__BGP_BBR['status'] == 'enabled' %}
     neighbor TIER0_V6 allowas-in 1
 {% endif %}
   exit-address-family
