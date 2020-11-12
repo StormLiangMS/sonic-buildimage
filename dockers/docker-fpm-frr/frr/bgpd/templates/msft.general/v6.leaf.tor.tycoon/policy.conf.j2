@@ -1,30 +1,38 @@
 !
 ! template: bgpd/templates/msft.general/v6.leaf.tor.tycoon/policy.conf.j2
 !
-ip community-list standard TYCOON_ER_COMMUNITY permit 12076:10450
-ip community-list standard TYCOON_ER_COMMUNITY permit 8075:10451
-ip community-list standard SDN_APPLIANCE_COMMUNITY permit 8075:9302
+bgp community-list standard UPSTREAM_PREFIX permit 8075:54000
+bgp community-list standard TYCOON_ER_COMMUNITY permit 12076:10450
+bgp community-list standard TYCOON_ER_COMMUNITY permit 8075:10451
+bgp community-list standard SDN_APPLIANCE_COMMUNITY permit 8075:9302
 !
 ipv6 prefix-list DEFAULT_IPV6 permit ::/0
 ipv6 prefix-list IPV6_64_ONLY permit ::/0 ge 64 le 64
 !
 route-map TO_TYCOON_ER_V6 permit 100
   match ipv6 address prefix-list DEFAULT_IPV6
+  match community UPSTREAM_PREFIX
 !
 route-map TO_TYCOON_ER_V6 deny 10000
 !
-route-map FROM_TYCOON_ER_V6 deny 100
-  match ipv6 address prefix-list DEFAULT_IPV6
-!
-route-map FROM_TYCOON_ER_V6 permit 1
+route-map FROM_TYCOON_ER_V6 permit 100
  set ipv6 next-hop prefer-global
+ on-match next
 !
 route-map FROM_TYCOON_ER_V6 permit 200
-  match community TYCOON_ER_COMMUNITY
+  match ipv6 address prefix-list DEFAULT_IPV6
+  match community UPSTREAM_PREFIX
+  set local-preference 90
+!
+route-map FROM_TYCOON_ER_V6 deny 300
+  match community LEAK_COMMUNITY
+!
+route-map FROM_TYCOON_ER_V6 permit 400
+  match community SDN_APPLIANCE_COMMUNITY
   match ipv6 address prefix-list IPV6_64_ONLY
 !
-route-map FROM_TYCOON_ER_V6 permit 300
-  match community SDN_APPLIANCE_COMMUNITY
+route-map FROM_TYCOON_ER_V6 permit 500
+  match community TYCOON_ER_COMMUNITY
   match ipv6 address prefix-list IPV6_64_ONLY
 !
 route-map FROM_TYCOON_ER_V6 deny 10000
