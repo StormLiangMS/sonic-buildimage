@@ -1,7 +1,7 @@
 !
 ! template: bgpd/templates/msft.dynamic/policies.conf.j2
 !
-{% if CONFIG_DB__DEVICE_METADATA['localhost']['type'] == 'ToRRouter' %}
+{% if CONFIG_DB__DEVICE_METADATA['localhost']['type'] in ['ToRRouter', 'BackEndToRRouter'] %}
 !
 route-map FROM_BGP_SPEAKER permit 10
 !

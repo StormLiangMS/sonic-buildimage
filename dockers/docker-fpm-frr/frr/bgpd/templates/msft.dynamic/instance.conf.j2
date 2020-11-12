@@ -3,7 +3,7 @@
 !
 {% from "common/functions.conf.j2" import get_ipv4_loopback_address %}
 !
-{% if CONFIG_DB__DEVICE_METADATA['localhost']['type'] == 'ToRRouter' %}
+{% if CONFIG_DB__DEVICE_METADATA['localhost']['type'] in ['ToRRouter', 'BackEndToRRouter'] %}
 !
   neighbor {{ bgp_session['name'] }} peer-group
   neighbor {{ bgp_session['name'] }} passive
