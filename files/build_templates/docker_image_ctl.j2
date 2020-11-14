@@ -295,10 +295,6 @@ start() {
     fi
 {%- if docker_container_name == "bgp" %}
     if [ "$DEV" ]; then
-        # update the template to be used as general for multi-asic
-        # this will be removed once we have templates dedicated for
-        # multi-asic
-        sudo sed -i 's/msft\.//g' /etc/sonic/constants.yml
         if [ ! -d "/etc/sonic/frr/$DEV" ]; then
             mkdir /etc/sonic/frr/$DEV
             cp -r /etc/sonic/frr/*.conf /etc/sonic/frr/$DEV
