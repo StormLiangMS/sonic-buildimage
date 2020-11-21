@@ -12,11 +12,6 @@
     "CONFIG_DB__BGP_BBR": {
         "status": "enabled"
     },
-    "constants": {
-        "bgp": {
-            "enable_bbr": true
-        }
-    },
     "bgp_session": {
         "asn": "11111",
         "name": "neig_device"
