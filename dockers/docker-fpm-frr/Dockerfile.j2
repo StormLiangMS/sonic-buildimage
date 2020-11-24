@@ -54,7 +54,6 @@ RUN apt-get clean -y      && \
 COPY ["frr", "/usr/share/sonic/templates"]
 COPY ["start.sh", "/usr/bin/"]
 COPY ["supervisord.conf", "/etc/supervisor/conf.d/"]
-COPY ["snmp.conf", "/etc/snmp/frr.conf"]
 COPY ["TSA", "/usr/bin/TSA"]
 COPY ["TSB", "/usr/bin/TSB"]
 COPY ["TSC", "/usr/bin/TSC"]
