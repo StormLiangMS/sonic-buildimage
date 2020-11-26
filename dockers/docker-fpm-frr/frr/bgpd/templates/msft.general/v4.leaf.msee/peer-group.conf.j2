@@ -9,9 +9,6 @@
     neighbor TIER0_V4 route-map TO_TIER0_V4 out
     neighbor TIER0_V4 send-community
     neighbor TIER0_V4 maximum-prefix 12000 90 warning-only
-{% if CONFIG_DB__BGP_BBR['status'] == 'enabled' %}
-    neighbor TIER0_V4 allowas-in 1
-{% endif %}
   exit-address-family
 !
 ! end of template: bgpd/templates/msft.general/v4.leaf.msee/peer-group.conf.j2

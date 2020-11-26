@@ -5,6 +5,10 @@
   neighbor {{ neighbor_addr }} description {{ bgp_session['name'] }}
   neighbor {{ neighbor_addr }} peer-group TIER0_V6
 !
+{% if CONFIG_DB__BGP_BBR['status'] == 'enabled' %}
+  neighbor {{ neighbor_addr }} allowas-in 1
+{% endif %}
+!
 {% if need_to_set_timers %}
 {# neighbor {{ neighbor_addr }} timers {{ bgp_session['keepalive'] }} {{ bgp_session['holdtime'] }} #}
 {% endif %}

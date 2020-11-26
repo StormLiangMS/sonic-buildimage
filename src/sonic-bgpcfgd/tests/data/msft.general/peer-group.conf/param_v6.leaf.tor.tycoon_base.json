@@ -10,9 +10,6 @@
             "deployment_id": "26"
         }
     },
-    "CONFIG_DB__BGP_BBR": {
-        "status": "disabled"
-    },
     "constants": {
         "bgp": {}
     },
