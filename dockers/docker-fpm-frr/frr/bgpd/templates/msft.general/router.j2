@@ -6,16 +6,8 @@
 {% if neighbor_addr | ipv4 %}
 {%     if device_type == 'MgmtToRRouter' %}
 {%         include path_template % "v4.mgmttor" %}
-{%     elif device_type == 'ToRRouter']%}
-{%         if neighbor_type == 'BackEndToRRouter' %}
-{%             include path_template % "v4.fe.be.tor" %}
-{%         else %}
-{%             include path_template % "v4.tor" %}
-{%     elif device_type == 'BackEndToRRouter' %}
-{%         if neighbor_type == 'ToRRouter' %}
-{%             include path_template % "v4.be.fe.tor" %}
-{%         else %}
-{%             include path_template % "v4.tor" %}
+{%     elif device_type in ['ToRRouter', 'BackEndToRRouter'] %}
+{%         include path_template % "v4.tor" %}
 {%     elif device_type in ['LeafRouter', 'BackEndLeafRouter'] %}
 {%         if neighbor_type == 'SpineRouter' %}
 {%             include path_template % "v4.leaf.spine" %}
