@@ -1,7 +1,11 @@
 {% macro general_routing(template_name) %}
 {% set device_type = CONFIG_DB__DEVICE_METADATA['localhost']['type'] %}
+{% set asn_number = CONFIG_DB__DEVICE_METADATA['localhost']['bgp_asn'] %}
 {% set neighbor_type = CONFIG_DB__DEVICE_NEIGHBOR_METADATA[bgp_session['name']]['type'] %}
 {% set neighbor_deployment_id = CONFIG_DB__DEVICE_NEIGHBOR_METADATA[bgp_session['name']]['deployment_id'] %}
+{% if neighbor_deployment_id is not defined or neighbor_deployment_id | length == 0 %}
+{% set neighbor_deployment_id = 0 %}
+{% endif %}
 {% set path_template = "bgpd/templates/msft.general/%s/" + template_name + ".conf.j2" %}
 {% if neighbor_addr | ipv4 %}
 {%     if device_type == 'MgmtToRRouter' %}

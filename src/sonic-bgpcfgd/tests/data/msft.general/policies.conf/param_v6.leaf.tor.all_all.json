@@ -1,17 +1,26 @@
 {
     "CONFIG_DB__DEVICE_METADATA": {
         "localhost": {
-            "type": "LeafRouter"
+            "type": "LeafRouter",
+            "bgp_asn": "65100"
         }
     },
     "CONFIG_DB__DEVICE_NEIGHBOR_METADATA": {
         "neig_device": {
-            "type": "ToRRouter"
+            "type": "ToRRouter",
+            "deployment_id": "3"
         }
     },
     "bgp_session": {
         "asn": "11111",
         "name": "neig_device"
     },
-    "neighbor_addr": "fc00::15"
+    "neighbor_addr": "fc00::15",
+    "constants": {
+        "bgp": {
+            "allow_list": {
+                "enabled": false
+            }
+        }
+    }
 }

@@ -19,8 +19,10 @@
     "constants": {
         "bgp": {
             "allow_list": {
-                "enabled": false
+                "enabled": true,
+                "drop_community": "12345:12345"
             }
         }
-    }
+    },
+    "allow_list_default_action": "permit"
 }

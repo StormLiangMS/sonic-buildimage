@@ -4,33 +4,64 @@
 !
 bgp community-list standard DNS_VIP_COMMUNITY permit 8075:9303
 bgp community-list standard UPSTREAM_PREFIX permit 8075:54000
+bgp community-list standard allow_list_default_community permit no-export
+!
+bgp as-path access-list BBR_AS_PATH permit ^[0-9]+_{{ asn_number }}
+!
 !
 ipv6 prefix-list DEFAULT_IPV6 permit ::/0
 ipv6 prefix-list IPV6_64_ONLY permit ::/0 ge 64 le 64
 ipv6 prefix-list IPV6_60_OR_LONGER permit ::/0 ge 60 le 64
+!
+!
+{% if constants.bgp.allow_list is defined and constants.bgp.allow_list.enabled is defined and constants.bgp.allow_list.enabled and constants.bgp.allow_list.drop_community is defined %}
+route-map ALLOW_LIST_DEPLOYMENT_ID_{{ neighbor_deployment_id }}_V6 permit 65534
+  match as-path BBR_AS_PATH
+!
+{% if allow_list_default_action == 'deny' %}
+!
+route-map ALLOW_LIST_DEPLOYMENT_ID_{{ neighbor_deployment_id }}_V6 permit 65535
+  set community no-export additive
+{% else %}
+!
+route-map ALLOW_LIST_DEPLOYMENT_ID_{{ neighbor_deployment_id }}_V6 permit 65535
+  set community {{ constants.bgp.allow_list.drop_community }} additive
+{% endif %}
+!
+{% endif %}
 !
 route-map TO_DNS_AGG_V6 permit 100
   match ipv6 address prefix-list DEFAULT_IPV6
 !
 route-map TO_DNS_AGG_V6 deny 10000
 !
-route-map FROM_DNS_AGG_V6 permit 100
+route-map FROM_DNS_AGG_V6_{{ neighbor_deployment_id }} permit 100
  set ipv6 next-hop prefer-global
  on-match next
 !
-route-map FROM_DNS_AGG_V6 permit 200
+route-map FROM_DNS_AGG_V6_{{ neighbor_deployment_id }} permit 200
   match ipv6 address prefix-list DEFAULT_IPV6
   match community UPSTREAM_PREFIX
   set local-preference 90
 !
-route-map FROM_DNS_AGG_V6 permit 300
+{% if constants.bgp.allow_list is defined and constants.bgp.allow_list.enabled is defined and constants.bgp.allow_list.enabled %}
+route-map FROM_DNS_AGG_V6_{{ neighbor_deployment_id }} permit 300
+  call ALLOW_LIST_DEPLOYMENT_ID_{{ neighbor_deployment_id }}_V6
+  on-match next
+!
+route-map FROM_DNS_AGG_V6_{{ neighbor_deployment_id }} permit 400
+  match community allow_list_default_community
+!
+{% endif %}
+!
+route-map FROM_DNS_AGG_V6_{{ neighbor_deployment_id }} permit 500
   match community DNS_VIP_COMMUNITY
   match ipv6 address prefix-list IPV6_60_OR_LONGER
 !
-route-map FROM_DNS_AGG_V6 permit 400
+route-map FROM_DNS_AGG_V6_{{ neighbor_deployment_id }} permit 600
   match ipv6 address prefix-list IPV6_64_ONLY
 !
-route-map FROM_DNS_AGG_V6 deny 10000
+route-map FROM_DNS_AGG_V6_{{ neighbor_deployment_id }} deny 10000
 !
 ! end of template: bgpd/templates/msft.general/v6.leaf.tor.dnsagg/policy.conf.j2
 !

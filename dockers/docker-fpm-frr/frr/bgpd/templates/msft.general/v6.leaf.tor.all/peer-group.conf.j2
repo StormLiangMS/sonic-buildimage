@@ -1,14 +1,14 @@
 !
 ! template: bgpd/templates/msft.general/v6.leaf.tor.all/peer-group.conf.j2
 !
-  neighbor TIER0_V6 peer-group
+  neighbor TIER0_V6_DEPLOYMENT_ID_{{ neighbor_deployment_id }} peer-group
   address-family ipv6 unicast
-    neighbor TIER0_V6 activate
-    neighbor TIER0_V6 soft-reconfiguration inbound
-    neighbor TIER0_V6 route-map FROM_TIER0_V6 in
-    neighbor TIER0_V6 route-map TO_TIER0_V6 out
-    neighbor TIER0_V6 send-community
-    neighbor TIER0_V6 maximum-prefix 8000 90 warning-only
+    neighbor TIER0_V6_DEPLOYMENT_ID_{{ neighbor_deployment_id }} activate
+    neighbor TIER0_V6_DEPLOYMENT_ID_{{ neighbor_deployment_id }} soft-reconfiguration inbound
+    neighbor TIER0_V6_DEPLOYMENT_ID_{{ neighbor_deployment_id }} route-map FROM_TIER0_V6_DEPLOYMENT_ID_{{ neighbor_deployment_id }} in
+    neighbor TIER0_V6_DEPLOYMENT_ID_{{ neighbor_deployment_id }} route-map TO_TIER0_V6 out
+    neighbor TIER0_V6_DEPLOYMENT_ID_{{ neighbor_deployment_id }} send-community
+    neighbor TIER0_V6_DEPLOYMENT_ID_{{ neighbor_deployment_id }} maximum-prefix 8000 90 warning-only
   exit-address-family
 !
 ! end of template: bgpd/templates/msft.general/v6.leaf.tor.all/peer-group.conf.j2
