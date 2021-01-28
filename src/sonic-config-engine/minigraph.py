@@ -1236,7 +1236,7 @@ def parse_xml(filename, platform=None, port_config_file=None, asic_name=None):
             'server_crt': '/etc/sonic/credentials/restapiserver.crt',
             'server_key': '/etc/sonic/credentials/restapiserver.key',
             'ca_crt': '/etc/sonic/credentials/AME_ROOT_CERTIFICATE.pem',
-            'client_crt_cname': 'client.restapi.sonic.gbl'
+            'client_crt_cname': 'client.restapi.sonic.gbl,vnetds.prod.int.azure-int.net'
         }
     }
     # Do not configure the minigraph's mirror session, which is currently unused
