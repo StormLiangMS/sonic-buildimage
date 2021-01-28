@@ -5,7 +5,7 @@ bgp community-list standard LEAK_COMMUNITY permit 8075:10400
 bgp community-list standard UPSTREAM_PREFIX permit 8075:54000
 bgp community-list expanded LEAK_PLUS_UPSTREAM permit .*8075:10400.*8075:54000.*
 bgp community-list expanded LEAK_PLUS_UPSTREAM permit .*8075:54000.*8075:10400.*
-bgp community-list standard allow_list_default_community permit no-export
+bgp community-list standard drop_community permit no-export
 !
 bgp as-path access-list BBR_AS_PATH permit ^[0-9]+_{{ asn_number }}
 !
@@ -48,7 +48,7 @@ route-map FROM_TIER0_V6_DEPLOYMENT_ID_{{ neighbor_deployment_id }} permit 400
   on-match next
 !
 route-map FROM_TIER0_V6_DEPLOYMENT_ID_{{ neighbor_deployment_id }} permit 500
-  match community allow_list_default_community
+  match community drop_community
 !
 {% endif %}
 !
