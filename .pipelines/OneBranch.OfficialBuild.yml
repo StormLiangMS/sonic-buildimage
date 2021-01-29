@@ -1,0 +1,90 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger: none
+
+schedules:
+- cron: "0 0 * * *"
+  displayName: Daily Official Build
+  branches:
+    include:
+    - internal-201911
+
+name: $(TeamProject)_$(Build.DefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+
+stages:
+- stage: Build
+  pool: sonic-image-builder
+  variables:
+    BUILD_TIMESTAMP: $[format('{0:yyyyMMdd}.{0:HHmmss}', pipeline.startTime)]
+
+  jobs:
+  - job:
+    displayName: "broadcom"
+    timeoutInMinutes: 1200
+    steps:
+    - checkout: self
+      submodules: recursive
+      displayName: 'Checkout code'
+
+    - script: |
+        . functions.sh
+        SONIC_VERSION=$(sonic_get_version)
+        echo SONIC_VERSION=${SONIC_VERSION} > sonic.properties
+        echo BUILD_NUMBER=$BUILD_NUMBER
+        echo SONIC_VERSION=$SONIC_VERSION
+        BUILD_JOBS=4
+        SONIC_PASSWORD=$(SONIC_PASSWORD)
+
+        make configure PLATFORM=broadcom
+        make SONIC_BUILD_JOBS=$BUILD_JOBS ENABLE_DHCP_GRAPH_SERVICE=y PASSWORD=$SONIC_PASSWORD SHUTDOWN_BGP_ON_START=y ENABLE_PFCWD_ON_START=y target/sonic-broadcom.bin target/sonic-aboot-broadcom.swi || true
+        make SONIC_BUILD_JOBS=$BUILD_JOBS ENABLE_DHCP_GRAPH_SERVICE=y PASSWORD=$SONIC_PASSWORD SHUTDOWN_BGP_ON_START=y ENABLE_PFCWD_ON_START=y target/sonic-nbi-broadcom.bin || true
+        make SONIC_BUILD_JOBS=1 ENABLE_DHCP_GRAPH_SERVICE=y PASSWORD=$SONIC_PASSWORD SHUTDOWN_BGP_ON_START=y ENABLE_PFCWD_ON_START=y ENABLE_SYNCD_RPC=y target/docker-syncd-brcm-rpc.gz || true
+        mv target/sonic-broadcom.bin target/sonic-broadcom-$SONIC_VERSION.bin
+        mv target/sonic-aboot-broadcom.swi target/sonic-aboot-broadcom-$SONIC_VERSION.swi
+        mv target/sonic-nbi-broadcom.bin target/sonic-nbi-broadcom-$SONIC_VERSION.bin
+
+        make SONIC_BUILD_JOBS=1 ENABLE_DHCP_GRAPH_SERVICE=y PASSWORD=$SONIC_PASSWORD SHUTDOWN_BGP_ON_START=y ENABLE_PFCWD_ON_START=y INSTALL_DEBUG_TOOLS=y target/sonic-broadcom.bin target/sonic-aboot-broadcom.swi
+        mv target/sonic-broadcom.bin target/sonic-broadcom-$SONIC_VERSION-dbg.bin
+        mv target/sonic-aboot-broadcom.swi target/sonic-aboot-broadcom-$SONIC_VERSION-dbg.swi
+      env:
+        BUILD_TIMESTAMP: $(BUILD_TIMESTAMP)
+        BUILD_NUMBER: $(Build.BuildId)
+      displayName: 'Build sonic image'
+    - publish: $(System.DefaultWorkingDirectory)/
+      artifact: sonic-buildimage.broadcom
+      displayName: "Archive sonic image"
+
+  - job:
+    displayName: "mellanox"
+    timeoutInMinutes: 1200
+    steps:
+    - checkout: self
+      submodules: recursive
+      displayName: 'Checkout code'
+
+    - script: |
+        . functions.sh
+        SONIC_VERSION=$(sonic_get_version)
+        echo SONIC_VERSION=${SONIC_VERSION} > sonic.properties
+        echo BUILD_NUMBER=$BUILD_NUMBER
+        echo SONIC_VERSION=$SONIC_VERSION
+        BUILD_JOBS=4
+        SONIC_PASSWORD=$(SONIC_PASSWORD)
+
+        make configure PLATFORM=mellanox
+        make SONIC_BUILD_JOBS=1 ENABLE_DHCP_GRAPH_SERVICE=y PASSWORD=$SONIC_PASSWORD SHUTDOWN_BGP_ON_START=y ENABLE_PFCWD_ON_START=y INCLUDE_RESTAPI=y INCLUDE_NAT=n target/sonic-mellanox.bin
+        make SONIC_BUILD_JOBS=$BUILD_JOBS ENABLE_DHCP_GRAPH_SERVICE=y PASSWORD=$SONIC_PASSWORD SHUTDOWN_BGP_ON_START=y ENABLE_PFCWD_ON_START=y INCLUDE_RESTAPI=y INCLUDE_NAT=n ENABLE_SYNCD_RPC=y target/docker-syncd-mlnx-rpc.gz || true
+        mv target/sonic-mellanox.bin target/sonic-mellanox-$SONIC_VERSION.bin
+        cp target/debs/stretch/python-saithrift_0.9.4_amd64.deb target/python-saithrift_0.9.4_amd64-$SONIC_VERSION.deb
+        make SONIC_BUILD_JOBS=$BUILD_JOBS ENABLE_DHCP_GRAPH_SERVICE=y PASSWORD=$SONIC_PASSWORD SHUTDOWN_BGP_ON_START=y ENABLE_PFCWD_ON_START=y INCLUDE_RESTAPI=y INSTALL_DEBUG_TOOLS=y target/sonic-mellanox.bin
+        mv target/sonic-mellanox.bin target/sonic-mellanox-$SONIC_VERSION-dbg.bin
+      env:
+        BUILD_TIMESTAMP: $(BUILD_TIMESTAMP)
+        BUILD_NUMBER: $(Build.BuildId)
+      displayName: 'Build sonic image'
+    - publish: $(System.DefaultWorkingDirectory)/
+      artifact: sonic-buildimage.mellanox
+      displayName: "Archive sonic image"
