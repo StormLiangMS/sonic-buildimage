@@ -14,85 +14,92 @@ schedules:
 
 name: $(TeamProject)_$(Build.DefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
 
+pool: sonic-image-builder
+
+variables:
+- group: SONIC-BUILD-VG-1
+
 stages:
 - stage: Build
-  pool: sonic-image-builder
   variables:
     BUILD_TIMESTAMP: $[format('{0:yyyyMMdd}.{0:HHmmss}', pipeline.startTime)]
     BUILD_NUMBER: $(Build.BuildId)
+    PASSWORD: $(SONIC_PASSWORD)
+    BUILD_OPTIONS: 'SONIC_BUILD_JOBS=4 ENABLE_DHCP_GRAPH_SERVICE=y SHUTDOWN_BGP_ON_START=y ENABLE_PFCWD_ON_START=y'
 
   jobs:
-  - job:
-    displayName: "broadcom"
-    timeoutInMinutes: 1200
-    steps:
-    - script: |
-        sudo rm -rf target
-        sudo rm -rf fsroot
-      displayName: "Clean Up"
+  - template: OneBranch-template.yml
+    parameters:
+      preSteps:
+        - script: |
+            sudo rm -rf target
+            sudo rm -rf fsroot
+          displayName: 'Init'
+        - checkout: self
+          clean: true
+          submodules: recursive
+          displayName: 'Checkout code'
+        - script: |
+            . functions.sh
+            SONIC_VERSION=$(sonic_get_version)
+            echo SONIC_VERSION=${SONIC_VERSION} > sonic.properties
+            make configure PLATFORM=$BUILD_NAME
+            cp sonic.properties target/
+          displayName: 'Make configure'
+      postSteps:
+        - publish: $(System.DefaultWorkingDirectory)/target
+          artifact: 'sonic-buildimage.$(BUILD_NAME)'
+          displayName: "Archive sonic image"
+        - script: |
+            mkdir -p azcopy
+            pushd azcopy
+            wget -O azcopy_v10.tar.gz https://aka.ms/downloadazcopy-v10-linux && tar -xf azcopy_v10.tar.gz --strip-components=1
+            popd
+            export AZCOPY_LOG_LOCATION=$(pwd)/azcopy
+            PUBLISH_URL="https://$(SONIC_STORAGE_ACCOUNT).blob.core.windows.net/images/pipelines/$(Build.DefinitionName)/$(Build.SourceBranchName)/$(Build.BuildId)$StorageSASKey"
+            azcopy/azcopy copy target "$PUBLISH_URL" --recursive=true --put-md5
+          env:
+            StorageSASKey: $(SONIC_STORAGE_SASKEY)
+          displayName: "Publish to Azure Storage"
+        - task: ComponentGovernanceComponentDetection@0
+      stepGroups:
+        - name: vs
+          script: |
+            SONIC_VERSION=$(cat sonic.properties)
+            make target/sonic-vs.bin target/sonic-vs.img.gz
+            mv target/sonic-vs.bin target/sonic-vs-$SONIC_VERSION.bin
+            mv target/sonic-vs.img.gz target/sonic-vs-$SONIC_VERSION.img.gz
+        - name: broadcom
+          script: |
+            SONIC_VERSION=$(cat sonic.properties)
+            OPTIONS="$BUILD_OPTIONS PASSWORD=$PASSWORD"
+            make $OPTIONS target/sonic-broadcom.bin target/sonic-aboot-broadcom.swi || true
+            make $OPTIONS target/sonic-nbi-broadcom.bin || true
+            make $OPTIONS ENABLE_SYNCD_RPC=y target/docker-syncd-brcm-rpc.gz || true
+            mv target/sonic-broadcom.bin target/sonic-broadcom-$SONIC_VERSION.bin
+            mv target/sonic-aboot-broadcom.swi target/sonic-aboot-broadcom-$SONIC_VERSION.swi
+            mv target/sonic-nbi-broadcom.bin target/sonic-nbi-broadcom-$SONIC_VERSION.bin
 
-    - checkout: self
-      submodules: recursive
-      displayName: 'Checkout code'
+            make $OPTIONS INSTALL_DEBUG_TOOLS=y target/sonic-broadcom.bin target/sonic-aboot-broadcom.swi
+            mv target/sonic-broadcom.bin target/sonic-broadcom-$SONIC_VERSION-dbg.bin
+            mv target/sonic-aboot-broadcom.swi target/sonic-aboot-broadcom-$SONIC_VERSION-dbg.swi
+        - name: mellanox
+          script: |
+            SONIC_VERSION=$(cat sonic.properties)
+            OPTIONS="$BUILD_OPTIONS INCLUDE_RESTAPI=y PASSWORD=$PASSWORD"
+            make $OPTIONS INCLUDE_NAT=n target/sonic-mellanox.bin
+            make $OPTIONS INCLUDE_NAT=n ENABLE_SYNCD_RPC=y target/docker-syncd-mlnx-rpc.gz || true
+            mv target/sonic-mellanox.bin target/sonic-mellanox-$SONIC_VERSION.bin
+            cp target/debs/stretch/python-saithrift_0.9.4_amd64.deb target/python-saithrift_0.9.4_amd64.deb
 
-    - script: |
-        . functions.sh
-        SONIC_VERSION=$(sonic_get_version)
-        echo SONIC_VERSION=${SONIC_VERSION} > sonic.properties
-        echo BUILD_NUMBER=$BUILD_NUMBER
-        echo SONIC_VERSION=$SONIC_VERSION
-        BUILD_JOBS=4
+            make $OPTIONS INSTALL_DEBUG_TOOLS=y target/sonic-mellanox.bin
+            mv target/sonic-mellanox.bin target/sonic-mellanox-$SONIC_VERSION-dbg.bin
+        - name: barefoot
+          script: |
+            SONIC_VERSION=$(cat sonic.properties)
+            sudo modprobe overlay
+            OPTIONS="$BUILD_OPTIONS ENABLE_NAT=n PASSWORD=$PASSWORD"
+            make $OPTIONS ENABLE_RESTAPI=y target/docker-syncd-bfn-rpc.gz
+            make $OPTIONS target/sonic-aboot-barefoot.swi
+            mv target/sonic-aboot-barefoot.swi target/sonic-aboot-barefoot-$SONIC_VERSION.swi
 
-        make configure PLATFORM=broadcom
-        make SONIC_BUILD_JOBS=$BUILD_JOBS ENABLE_DHCP_GRAPH_SERVICE=y PASSWORD=$SONIC_PASSWORD SHUTDOWN_BGP_ON_START=y ENABLE_PFCWD_ON_START=y target/sonic-broadcom.bin target/sonic-aboot-broadcom.swi || true
-        make SONIC_BUILD_JOBS=$BUILD_JOBS ENABLE_DHCP_GRAPH_SERVICE=y PASSWORD=$SONIC_PASSWORD SHUTDOWN_BGP_ON_START=y ENABLE_PFCWD_ON_START=y target/sonic-nbi-broadcom.bin || true
-        make SONIC_BUILD_JOBS=1 ENABLE_DHCP_GRAPH_SERVICE=y PASSWORD=$SONIC_PASSWORD SHUTDOWN_BGP_ON_START=y ENABLE_PFCWD_ON_START=y ENABLE_SYNCD_RPC=y target/docker-syncd-brcm-rpc.gz || true
-        mv target/sonic-broadcom.bin target/sonic-broadcom-$SONIC_VERSION.bin
-        mv target/sonic-aboot-broadcom.swi target/sonic-aboot-broadcom-$SONIC_VERSION.swi
-        mv target/sonic-nbi-broadcom.bin target/sonic-nbi-broadcom-$SONIC_VERSION.bin
-
-        make SONIC_BUILD_JOBS=1 ENABLE_DHCP_GRAPH_SERVICE=y PASSWORD=$SONIC_PASSWORD SHUTDOWN_BGP_ON_START=y ENABLE_PFCWD_ON_START=y INSTALL_DEBUG_TOOLS=y target/sonic-broadcom.bin target/sonic-aboot-broadcom.swi
-        mv target/sonic-broadcom.bin target/sonic-broadcom-$SONIC_VERSION-dbg.bin
-        mv target/sonic-aboot-broadcom.swi target/sonic-aboot-broadcom-$SONIC_VERSION-dbg.swi
-      env:
-        SONIC_PASSWORD: '$(SONIC_PASSWORD)'
-      displayName: 'Build sonic image'
-    - publish: $(System.DefaultWorkingDirectory)/target
-      artifact: sonic-buildimage.broadcom
-      displayName: "Archive sonic image"
-
-  - job:
-    displayName: "mellanox"
-    timeoutInMinutes: 1200
-    steps:
-    - script: |
-        sudo rm -rf target
-        sudo rm -rf fsroot
-      displayName: "Clean Up"
-
-    - checkout: self
-      submodules: recursive
-      displayName: 'Checkout code'
-
-    - script: |
-        . functions.sh
-        SONIC_VERSION=$(sonic_get_version)
-        echo SONIC_VERSION=${SONIC_VERSION} > sonic.properties
-        echo BUILD_NUMBER=$BUILD_NUMBER
-        echo SONIC_VERSION=$SONIC_VERSION
-        BUILD_JOBS=4
-
-        make configure PLATFORM=mellanox
-        make SONIC_BUILD_JOBS=1 ENABLE_DHCP_GRAPH_SERVICE=y PASSWORD=$SONIC_PASSWORD SHUTDOWN_BGP_ON_START=y ENABLE_PFCWD_ON_START=y INCLUDE_RESTAPI=y INCLUDE_NAT=n target/sonic-mellanox.bin
-        make SONIC_BUILD_JOBS=$BUILD_JOBS ENABLE_DHCP_GRAPH_SERVICE=y PASSWORD=$SONIC_PASSWORD SHUTDOWN_BGP_ON_START=y ENABLE_PFCWD_ON_START=y INCLUDE_RESTAPI=y INCLUDE_NAT=n ENABLE_SYNCD_RPC=y target/docker-syncd-mlnx-rpc.gz || true
-        mv target/sonic-mellanox.bin target/sonic-mellanox-$SONIC_VERSION.bin
-        cp target/debs/stretch/python-saithrift_0.9.4_amd64.deb target/python-saithrift_0.9.4_amd64-$SONIC_VERSION.deb
-        make SONIC_BUILD_JOBS=$BUILD_JOBS ENABLE_DHCP_GRAPH_SERVICE=y PASSWORD=$SONIC_PASSWORD SHUTDOWN_BGP_ON_START=y ENABLE_PFCWD_ON_START=y INCLUDE_RESTAPI=y INSTALL_DEBUG_TOOLS=y target/sonic-mellanox.bin
-        mv target/sonic-mellanox.bin target/sonic-mellanox-$SONIC_VERSION-dbg.bin
-      env:
-        SONIC_PASSWORD: '$(SONIC_PASSWORD)'
-      displayName: 'Build sonic image'
-
-    - publish: $(System.DefaultWorkingDirectory)/target
-      artifact: sonic-buildimage.mellanox
-      displayName: "Archive sonic image"
