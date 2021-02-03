@@ -26,7 +26,7 @@ stages:
     BUILD_NUMBER: $(Build.BuildId)
     PASSWORD: $(SONIC_PASSWORD)
     BUILD_OPTIONS: 'SONIC_BUILD_JOBS=4 ENABLE_DHCP_GRAPH_SERVICE=y SHUTDOWN_BGP_ON_START=y ENABLE_PFCWD_ON_START=y'
-
+    VERSION_PATH: target/sonic.version
   jobs:
   - template: OneBranch-template.yml
     parameters:
@@ -44,7 +44,8 @@ stages:
             SONIC_VERSION=$(sonic_get_version)
             echo SONIC_VERSION=${SONIC_VERSION} > sonic.properties
             make configure PLATFORM=$BUILD_NAME
-            cp sonic.properties target/
+            echo $SONIC_VERSION > $VERSION_PATH
+            mkdir -p target/release
           displayName: 'Make configure'
       postSteps:
         - publish: $(System.DefaultWorkingDirectory)/target
@@ -56,8 +57,16 @@ stages:
             wget -O azcopy_v10.tar.gz https://aka.ms/downloadazcopy-v10-linux && tar -xf azcopy_v10.tar.gz --strip-components=1
             popd
             export AZCOPY_LOG_LOCATION=$(pwd)/azcopy
-            PUBLISH_URL="https://$(SONIC_STORAGE_ACCOUNT).blob.core.windows.net/images/pipelines/$(Build.DefinitionName)/$(Build.SourceBranchName)/$(Build.BuildId)$StorageSASKey"
-            azcopy/azcopy copy target "$PUBLISH_URL" --recursive=true --put-md5
+            PUBLISH_PLATFORM_URL="https://$(SONIC_STORAGE_ACCOUNT).blob.core.windows.net/images/pipelines/$(Build.DefinitionName)/$(Build.SourceBranchName)/$BUILD_NAME"
+            PUBLISH_URL="$PUBLISH_PLATFORM_URL/$(Build.BuildId)$StorageSASKey"
+            cd target
+            ../azcopy/azcopy copy . "$PUBLISH_PLATFORM_URL/$(Build.BuildId)$StorageSASKey" --recursive=true --put-md5
+            touch prev_build
+            ../azcopy/azcopy copy "$PUBLISH_PLATFORM_URL/latest_build$StorageSASKey" latest_build || true
+            [ -f latest_build ] && mv latest_build prev_build
+            echo $(Build.BuildId) > latest_build
+            ../azcopy/azcopy copy latest_build "$PUBLISH_PLATFORM_URL/latest_build$StorageSASKey"  --put-md5
+            ../azcopy/azcopy copy prev_build "$PUBLISH_PLATFORM_URL/prev_build$StorageSASKey"  --put-md5
           env:
             StorageSASKey: $(SONIC_STORAGE_SASKEY)
           displayName: "Publish to Azure Storage"
@@ -65,41 +74,34 @@ stages:
       stepGroups:
         - name: vs
           script: |
-            SONIC_VERSION=$(cat sonic.properties)
             make target/sonic-vs.bin target/sonic-vs.img.gz
-            mv target/sonic-vs.bin target/sonic-vs-$SONIC_VERSION.bin
-            mv target/sonic-vs.img.gz target/sonic-vs-$SONIC_VERSION.img.gz
         - name: broadcom
           script: |
-            SONIC_VERSION=$(cat sonic.properties)
             OPTIONS="$BUILD_OPTIONS PASSWORD=$PASSWORD"
             make $OPTIONS target/sonic-broadcom.bin target/sonic-aboot-broadcom.swi || true
             make $OPTIONS target/sonic-nbi-broadcom.bin || true
             make $OPTIONS ENABLE_SYNCD_RPC=y target/docker-syncd-brcm-rpc.gz || true
-            mv target/sonic-broadcom.bin target/sonic-broadcom-$SONIC_VERSION.bin
-            mv target/sonic-aboot-broadcom.swi target/sonic-aboot-broadcom-$SONIC_VERSION.swi
-            mv target/sonic-nbi-broadcom.bin target/sonic-nbi-broadcom-$SONIC_VERSION.bin
+            mv target/sonic-broadcom.bin target/sonic-aboot-broadcom.swi target/release/
 
             make $OPTIONS INSTALL_DEBUG_TOOLS=y target/sonic-broadcom.bin target/sonic-aboot-broadcom.swi
-            mv target/sonic-broadcom.bin target/sonic-broadcom-$SONIC_VERSION-dbg.bin
-            mv target/sonic-aboot-broadcom.swi target/sonic-aboot-broadcom-$SONIC_VERSION-dbg.swi
+            mv target/sonic-broadcom.bin target/sonic-broadcom-dbg.bin
+            mv target/sonic-aboot-broadcom.swi target/sonic-aboot-broadcom-dbg.swi
+            mv target/release/* ./
         - name: mellanox
           script: |
-            SONIC_VERSION=$(cat sonic.properties)
             OPTIONS="$BUILD_OPTIONS INCLUDE_RESTAPI=y PASSWORD=$PASSWORD"
             make $OPTIONS INCLUDE_NAT=n target/sonic-mellanox.bin
             make $OPTIONS INCLUDE_NAT=n ENABLE_SYNCD_RPC=y target/docker-syncd-mlnx-rpc.gz || true
-            mv target/sonic-mellanox.bin target/sonic-mellanox-$SONIC_VERSION.bin
+            mv target/sonic-mellanox.bin target/release/
             cp target/debs/stretch/python-saithrift_0.9.4_amd64.deb target/python-saithrift_0.9.4_amd64.deb
 
             make $OPTIONS INSTALL_DEBUG_TOOLS=y target/sonic-mellanox.bin
-            mv target/sonic-mellanox.bin target/sonic-mellanox-$SONIC_VERSION-dbg.bin
+            mv target/sonic-mellanox.bin target/sonic-mellanox-dbg.bin
+            mv target/release/* ./
         - name: barefoot
           script: |
-            SONIC_VERSION=$(cat sonic.properties)
             sudo modprobe overlay
             OPTIONS="$BUILD_OPTIONS ENABLE_NAT=n PASSWORD=$PASSWORD"
             make $OPTIONS ENABLE_RESTAPI=y target/docker-syncd-bfn-rpc.gz
             make $OPTIONS target/sonic-aboot-barefoot.swi
-            mv target/sonic-aboot-barefoot.swi target/sonic-aboot-barefoot-$SONIC_VERSION.swi
 
