@@ -34,6 +34,10 @@ stages:
         - script: |
             sudo rm -rf target
             sudo rm -rf fsroot
+            if [ ! -z $HOME ]; then
+              sudo mkdir -p $HOME
+              sudo chown $USER:$(id -gn) $HOME
+            fi
           displayName: 'Init'
         - checkout: self
           clean: true
@@ -59,18 +63,35 @@ stages:
             export AZCOPY_LOG_LOCATION=$(pwd)/azcopy
             PUBLISH_PLATFORM_URL="https://$(SONIC_STORAGE_ACCOUNT).blob.core.windows.net/images/pipelines/$(Build.DefinitionName)/$(Build.SourceBranchName)/$BUILD_NAME"
             PUBLISH_URL="$PUBLISH_PLATFORM_URL/$(Build.BuildId)$StorageSASKey"
-            cd target
-            ../azcopy/azcopy copy . "$PUBLISH_PLATFORM_URL/$(Build.BuildId)$StorageSASKey" --recursive=true --put-md5
+            azcopy/azcopy copy target "$PUBLISH_PLATFORM_URL/$(Build.BuildId)$StorageSASKey" --recursive=true --put-md5
             touch prev_build
-            ../azcopy/azcopy copy "$PUBLISH_PLATFORM_URL/latest_build$StorageSASKey" latest_build || true
+            azcopy/azcopy copy "$PUBLISH_PLATFORM_URL/latest_build$StorageSASKey" latest_build || true
             [ -f latest_build ] && mv latest_build prev_build
             echo $(Build.BuildId) > latest_build
-            ../azcopy/azcopy copy latest_build "$PUBLISH_PLATFORM_URL/latest_build$StorageSASKey"  --put-md5
-            ../azcopy/azcopy copy prev_build "$PUBLISH_PLATFORM_URL/prev_build$StorageSASKey"  --put-md5
+            azcopy/azcopy copy latest_build "$PUBLISH_PLATFORM_URL/latest_build$StorageSASKey"  --put-md5
+            azcopy/azcopy copy prev_build "$PUBLISH_PLATFORM_URL/prev_build$StorageSASKey"  --put-md5
           env:
             StorageSASKey: $(SONIC_STORAGE_SASKEY)
           displayName: "Publish to Azure Storage"
+        - script: |
+            SONIC_VERSION=$(cat $VERSION_PATH)
+            PORT=443
+            DOCKERS=$(ls target/docker-*.gz)
+            BRANCH=$(Build.SourceBranchName)
+            for f in $DOCKERS; do
+              echo $f
+              ./push_docker.sh $f $REGISTRY_SERVER $PORT $REGISTRY_USERNAME "$REGISTRY_PASSWD" $SONIC_VERSION $BRANCH
+              ./push_docker.sh $f $REGISTRY_SERVER $PORT $REGISTRY_USERNAME "$REGISTRY_PASSWD" latest $BRANCH
+            done
+          env:
+            REGISTRY_PASSWD: $(REGISTRY_PASSWD)
+            BUILD_NUMBER: $(Build.BuildId)
+          displayName: "Publish to Docker Registry"
         - task: ComponentGovernanceComponentDetection@0
+        - script: |
+            sudo rm -rf fsroot
+            docker rmi -f $(docker images docker-* -a -q | grep docker-) || true
+          displayName: "CleanUp"
       stepGroups:
         - name: vs
           script: |
