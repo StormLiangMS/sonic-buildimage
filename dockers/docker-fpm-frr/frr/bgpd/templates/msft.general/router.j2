@@ -10,8 +10,14 @@
 {% if neighbor_addr | ipv4 %}
 {%     if device_type == 'MgmtToRRouter' %}
 {%         include path_template % "v4.mgmttor" %}
-{%     elif device_type in ['ToRRouter', 'BackEndToRRouter'] %}
-{%         include path_template % "v4.tor" %}
+{%     elif device_type in ['ToRRouter', 'BackEndToRRouter']%}
+{%         if neighbor_type == 'BackEndToRRouter' %}
+{%             include path_template % "v4.tor.frontend" %}
+{%         elif neighbor_type == 'ToRRouter' %}
+{%             include path_template % "v4.tor.backend" %}
+{%         else %}
+{%             include path_template % "v4.tor" %}
+{%         endif %}
 {%     elif device_type in ['LeafRouter', 'BackEndLeafRouter'] %}
 {%         if neighbor_type == 'SpineRouter' %}
 {%             include path_template % "v4.leaf.spine" %}
