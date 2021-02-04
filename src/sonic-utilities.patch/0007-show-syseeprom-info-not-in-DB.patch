@@ -1,0 +1,34 @@
+From f36a10881b926b9a4747a4fa2ffc230269cfe2d7 Tue Feb 2 10:46:53 2021
+From: Judy Joseph <judy.joseph@microsoft.com>
+Date: Tue, 2 Feb 2021 10:46:53 -0800
+Subject: [PATCH] Patch for checking if syseeprom info is present in DB, if not
+ invoke the platform plugin directly.
+
+---
+ show/main.py | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/show/main.py b/show/main.py
+index 35f370b..5f8977f 100755
+--- a/show/main.py
++++ b/show/main.py
+@@ -1564,7 +1564,15 @@ def summary(json):
+ @click.option('--verbose', is_flag=True, help="Enable verbose output")
+ def syseeprom(verbose):
+     """Show system EEPROM information"""
+-    cmd = "sudo decode-syseeprom -d"
++    # Check if EEPROM info is present in DB. If yes, use the '-d' option.
++    # Remove this check when all platforms support EEPROM info in DB.
++    db = SonicV2Connector()
++    db.connect(db.STATE_DB)
++    if db.keys(db.STATE_DB, 'EEPROM_INFO|*'):
++        cmd = "sudo decode-syseeprom -d"
++    else:
++        cmd = "sudo decode-syseeprom"
++
+     run_command(cmd, display_cmd=verbose)
+ 
+ # 'psustatus' subcommand ("show platform psustatus")
+-- 
+2.17.1
+
