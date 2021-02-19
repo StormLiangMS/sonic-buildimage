@@ -9,10 +9,34 @@ cp /acms/acms_secrets.ini /var/opt/msft/client/
 mkdir -p /var/opt/msft/acms
 cp /acms/acms.ini /var/opt/msft/acms
 
-BOOTSTRAP_CERT=/etc/sonic/credentials/sonic_acms_bootstrap.pfx
-DSMS_CONF=/var/opt/msft/client/dsms.conf
+BOOTSTRAP_CERT="/etc/sonic/credentials/"
+SONIC_CREDS_PATH="/etc/sonic/credentials/"
+SONIC_ACMS_BOOTSTRAP_PATTERN="sonic_acms_bootstrap-.*\.pfx"
+DSMS_CONF="/var/opt/msft/client/dsms.conf"
 
-supervisorctl start dSMS_endpoint_modifier
+supervisorctl start dSMS_config_modifier
+sleep 5
+
+# Wait for ACMS config to be updated
+while true
+do
+    text=`supervisorctl status dSMS_config_modifier`
+    if [[ $text == *"EXITED"* ]]; then
+        break
+    fi
+    sleep 5
+done
+
+# Determine the bootstrap cert file name
+text=`ls $SONIC_CREDS_PATH | grep $SONIC_ACMS_BOOTSTRAP_PATTERN`
+num_files=`echo $text | wc -l`
+if [ $num_files -eq 1 ]; then
+    BOOTSTRAP_CERT=$BOOTSTRAP_CERT$text
+    logger "BOOTSTRAP_CERT=$BOOTSTRAP_CERT"
+else
+    logger "More than one bootstrap cert file found!"
+    exit 1
+fi
 
 check_bootstrap_status() {
     logger "Checking for bootstrap status"
@@ -39,13 +63,12 @@ do
         BOOTSTRAP_STATUS=$? 
         # Retry if bootstrap fails
         if [[ $BOOTSTRAP_STATUS = 0 ]]; then
-            sleep 10
             rm /var/opt/msft/client/dsms.conf
         fi
     else
         logger "Waiting for bootstrap cert"
-        sleep 60
     fi
+    sleep 60
 done
 logger "ACMS bootstrapping complete"
 
