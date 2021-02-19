@@ -8,8 +8,5 @@
 #check program acms|acms with path "/usr/bin/process_checker acms /usr/bin/acms"
 #    if status != 0 for 5 times within 5 cycles then alert repeat every 1 cycles
 
-check program acms|dSMS_endpoint_modifier with path "/usr/bin/process_checker acms python /usr/bin/dSMS_endpoint_modifier.py"
-    if status != 0 for 5 times within 5 cycles then alert repeat every 1 cycles
-
 check program acms|cert_converter with path "/usr/bin/process_checker acms python /usr/bin/cert_converter.py"
     if status != 0 for 5 times within 5 cycles then alert repeat every 1 cycles
