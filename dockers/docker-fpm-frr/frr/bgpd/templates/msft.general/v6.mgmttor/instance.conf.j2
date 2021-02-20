@@ -5,6 +5,12 @@
   neighbor {{ neighbor_addr }} description {{ bgp_session['name'] }}
   neighbor {{ neighbor_addr }} peer-group TIER1_V6
 !
+{% if CONFIG_DB__BGP_BBR['status'] == 'enabled' %}
+address-family ipv6 unicast
+  neighbor {{ neighbor_addr }} allowas-in 1
+exit-address-family
+{% endif %}
+!
 {% if need_to_set_timers %}
 {# neighbor {{ neighbor_addr }} timers {{ bgp_session['keepalive'] }} {{ bgp_session['holdtime'] }} #}
 {% endif %}

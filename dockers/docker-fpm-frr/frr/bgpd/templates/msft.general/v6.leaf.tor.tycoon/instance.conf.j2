@@ -6,7 +6,9 @@
   neighbor {{ neighbor_addr }} peer-group TYCOON_V6
 !
 {% if CONFIG_DB__BGP_BBR['status'] == 'enabled' %}
+address-family ipv6 unicast
   neighbor {{ neighbor_addr }} allowas-in 1
+exit-address-family
 {% endif %}
 !
 {% if need_to_set_timers %}

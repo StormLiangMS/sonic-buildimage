@@ -6,7 +6,9 @@
   neighbor {{ neighbor_addr }} peer-group TIER0_V6_DEPLOYMENT_ID_{{ neighbor_deployment_id }}
 !
 {% if CONFIG_DB__BGP_BBR['status'] == 'enabled' %}
+address-family ipv6 unicast
   neighbor {{ neighbor_addr }} allowas-in 1
+exit-address-family
 {% endif %}
 !
 {% if need_to_set_timers %}
