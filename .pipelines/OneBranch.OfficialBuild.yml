@@ -4,6 +4,7 @@
 # https://aka.ms/yaml
 
 trigger: none
+pr: none
 
 schedules:
 - cron: "0 0 * * *"
@@ -11,6 +12,7 @@ schedules:
   branches:
     include:
     - internal-201911
+  always: true
 
 name: $(TeamProject)_$(Build.DefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
 
@@ -107,7 +109,7 @@ stages:
             make $OPTIONS INSTALL_DEBUG_TOOLS=y target/sonic-broadcom.bin target/sonic-aboot-broadcom.swi
             mv target/sonic-broadcom.bin target/sonic-broadcom-dbg.bin
             mv target/sonic-aboot-broadcom.swi target/sonic-aboot-broadcom-dbg.swi
-            mv target/release/* ./
+            mv target/release/* target/
         - name: mellanox
           script: |
             OPTIONS="$BUILD_OPTIONS INCLUDE_RESTAPI=y PASSWORD=$PASSWORD"
@@ -118,7 +120,7 @@ stages:
 
             make $OPTIONS INSTALL_DEBUG_TOOLS=y target/sonic-mellanox.bin
             mv target/sonic-mellanox.bin target/sonic-mellanox-dbg.bin
-            mv target/release/* ./
+            mv target/release/* target/
         - name: barefoot
           script: |
             sudo modprobe overlay
