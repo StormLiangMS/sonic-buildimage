@@ -20,6 +20,8 @@ pool: sonic-image-builder
 
 variables:
 - group: SONIC-BUILD-VG-1
+- name: PUBLISH_BLOB_PREFIX
+  value: pipelines/$(Build.DefinitionName)/$(Build.SourceBranchName)
 
 stages:
 - stage: Build
@@ -52,18 +54,27 @@ stages:
             make configure PLATFORM=$BUILD_NAME
             echo $SONIC_VERSION > $VERSION_PATH
             mkdir -p target/release
+            rm -f target/sonic-installers
+            echo "##vso[task.setvariable variable=SONIC_VERSION]$SONIC_VERSION"
           displayName: 'Make configure'
       postSteps:
         - publish: $(System.DefaultWorkingDirectory)/target
           artifact: 'sonic-buildimage.$(BUILD_NAME)'
           displayName: "Archive sonic image"
         - script: |
+            for image in `ls target | grep -E "\.(swi|bin|raw|deb)$"`; do
+              version_image=$(echo $image | sed -E "s/(-dbg\.\w+|\.\w+)$/-$(SONIC_VERSION)\1/")
+              echo "$image,$version_image" >> target/sonic-installers 
+              cp -f target/$image target/$version_image
+            done
+          displayName: "Copy installers"
+        - script: |
             mkdir -p azcopy
             pushd azcopy
             wget -O azcopy_v10.tar.gz https://aka.ms/downloadazcopy-v10-linux && tar -xf azcopy_v10.tar.gz --strip-components=1
             popd
             export AZCOPY_LOG_LOCATION=$(pwd)/azcopy
-            PUBLISH_PLATFORM_URL="https://$(SONIC_STORAGE_ACCOUNT).blob.core.windows.net/images/pipelines/$(Build.DefinitionName)/$(Build.SourceBranchName)/$BUILD_NAME"
+            PUBLISH_PLATFORM_URL="https://$(SONIC_STORAGE_ACCOUNT).blob.core.windows.net/images/$(PUBLISH_BLOB_PREFIX)/$BUILD_NAME"
             PUBLISH_URL="$PUBLISH_PLATFORM_URL/$(Build.BuildId)$StorageSASKey"
             azcopy/azcopy copy target "$PUBLISH_PLATFORM_URL/$(Build.BuildId)$StorageSASKey" --recursive=true --put-md5
             touch prev_build
@@ -127,4 +138,59 @@ stages:
             OPTIONS="$BUILD_OPTIONS ENABLE_NAT=n PASSWORD=$PASSWORD"
             make $OPTIONS ENABLE_RESTAPI=y target/docker-syncd-bfn-rpc.gz
             make $OPTIONS target/sonic-aboot-barefoot.swi
+- stage: Mklink
+  pool:
+    name: CDPCustom- sonic-build-agents
+    demands:
+    - AGENT_GROUP -equals SONIC_PHX
+  condition: always()
+  jobs:
+  - job: Mklink
+    variables:
+      MKLINK_SCRIPT: |
+        echo "Make link for $(PUBLISH_BLOB_PREFIX)"
+        PUBLISH_BLOB_PREFIX=$(PUBLISH_BLOB_PREFIX)
+        PUBLISH_PATH=/azmirrors/$PUBLISH_BLOB_PREFIX
+        LINK_ROOT=/data/$(dirname $PUBLISH_BLOB_PREFIX)
+        BRANCH_NAME=$(basename $PUBLISH_BLOB_PREFIX)
+        for platform in `ls $PUBLISH_PATH`; do
+          platform_path=$PUBLISH_PATH/$platform
+          if ! [ -f $platform_path/latest_build ]; then
+              echo "The file $platform_path/latest_build does not exist"
+              continue
+          fi
+          
+          latest_build=$(cat $platform_path/latest_build)
+          latest_path=$platform_path/$latest_build
+          if ! [ -d $latest_path ]; then
+              echo "The path $latest_path does not exist"
+              continue
+          fi
+          
+          # Make soft links for latest and prev
+          LINK_PATH=$LINK_ROOT/$platform/$BRANCH_NAME
+          mkdir -p $LINK_PATH
+          if [ -d $LINK_PATH/latest ] && [ "$(realpath $LINK_PATH/latest)" != "$latest_path" ]; then
+            ln -sf "$(realpath $LINK_PATH/latest)" "$LINK_PATH/prev"
+          fi
+          ln -sf "$latest_path" "$LINK_PATH/latest"
 
+          # Make soft links for installers
+          installers_path=$LINK_PATH/installers
+          mkdir -p $installers_path
+          ln -sf $latest_path/target/sonic.version $installers_path/sonic.version
+          for installer in `cat $latest_path/target/sonic-installers`; do
+            image=$(echo $installer | cut -d, -f1)
+            version_image=$(echo $installer | cut -d, -f2)
+            ln -sf $latest_path/target/$version_image $installers_path/$image
+          done
+        done
+    steps:
+    - script: |
+        echo "Make soft links"
+        ssh -tt -o UserKnownHostsFile=/dev/null \
+        -o LogLevel=error \
+        -o strictHostKeyChecking=no \
+        acs-trusty8.corp.microsoft.com \
+        "$MKLINK_SCRIPT"
+      displayName: "Make soft links for trusty8"
