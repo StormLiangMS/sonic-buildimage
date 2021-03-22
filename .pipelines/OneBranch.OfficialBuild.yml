@@ -171,9 +171,9 @@ stages:
           LINK_PATH=$LINK_ROOT/$platform/$BRANCH_NAME
           mkdir -p $LINK_PATH
           if [ -d $LINK_PATH/latest ] && [ "$(realpath $LINK_PATH/latest)" != "$latest_path" ]; then
-            ln -sf "$(realpath $LINK_PATH/latest)" "$LINK_PATH/prev"
+            ln -nsf "$(realpath $LINK_PATH/latest)" "$LINK_PATH/prev"
           fi
-          ln -sf "$latest_path" "$LINK_PATH/latest"
+          ln -nsf "$latest_path" "$LINK_PATH/latest"
 
           # Make soft links for installers
           installers_path=$LINK_PATH/installers
