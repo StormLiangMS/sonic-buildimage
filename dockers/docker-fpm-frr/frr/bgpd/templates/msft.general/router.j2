@@ -3,7 +3,6 @@
 {% set asn_number = CONFIG_DB__DEVICE_METADATA['localhost']['bgp_asn'] %}
 {% set neighbor_type = CONFIG_DB__DEVICE_NEIGHBOR_METADATA[bgp_session['name']]['type'] %}
 {% set neighbor_deployment_id = CONFIG_DB__DEVICE_NEIGHBOR_METADATA[bgp_session['name']]['deployment_id'] %}
-{% set devicedownstream_subrole = CONFIG_DB__DEVICE_METADATA['localhost']['downstream_subrole'] %}
 {% if neighbor_deployment_id is not defined or neighbor_deployment_id | length == 0 %}
 {% set neighbor_deployment_id = 0 %}
 {% endif %}
