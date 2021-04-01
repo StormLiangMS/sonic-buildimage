@@ -92,7 +92,7 @@ def update_config():
     contents = acms_conf_file.read()
     if region not in contents:
         new_contents = re.sub("region", region, contents)
-        new_contents = re.sub("BootstrapCert=.*\n*", "BootstrapCert="+bootstrap_cert+"\n", new_contents)
+        new_contents = re.sub("BootstrapCert=.*\n*", "BootstrapCert="+sonic_creds_dir+bootstrap_cert+"\n", new_contents)
         sonic_logger.log_info("Updated config: "+new_contents)
         acms_conf_file.seek(0)
         acms_conf_file.write(new_contents)
