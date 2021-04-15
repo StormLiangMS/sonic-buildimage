@@ -3,16 +3,12 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
-trigger: none
-pr: none
-
-schedules:
-- cron: "0 0 * * *"
-  displayName: Daily Official Build
+trigger:
+  batch: true
   branches:
     include:
     - internal-201911
-  always: true
+pr: none
 
 name: $(TeamProject)_$(Build.DefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
 
@@ -27,6 +23,7 @@ stages:
 - stage: Build
   variables:
     BUILD_TIMESTAMP: $[format('{0:yyyyMMdd}.{0:HHmmss}', pipeline.startTime)]
+    BRANCH_NAME: $(Build.SourceBranchName)
     BUILD_NUMBER: $(Build.BuildId)
     PASSWORD: $(SONIC_PASSWORD)
     BUILD_OPTIONS: 'SONIC_BUILD_JOBS=4 ENABLE_DHCP_GRAPH_SERVICE=y SHUTDOWN_BGP_ON_START=y ENABLE_PFCWD_ON_START=y'
@@ -48,14 +45,18 @@ stages:
           submodules: recursive
           displayName: 'Checkout code'
         - script: |
+            git checkout -b $(Build.SourceBranchName)
             . functions.sh
             SONIC_VERSION=$(sonic_get_version)
             echo SONIC_VERSION=${SONIC_VERSION} > sonic.properties
-            make configure PLATFORM=$BUILD_NAME
-            echo $SONIC_VERSION > $VERSION_PATH
+            LATEST_TAG=$(git describe --tags --abbrev=0)
             mkdir -p target/release
             rm -f target/sonic-installers
+            echo $SONIC_VERSION > $VERSION_PATH
+            echo "SONIC_VERSION=$SONIC_VERSION, LATEST_TAG=$LATEST_TAG"
             echo "##vso[task.setvariable variable=SONIC_VERSION]$SONIC_VERSION"
+            echo "##vso[task.setvariable variable=LATEST_TAG]$LATEST_TAG"
+            make configure PLATFORM=$BUILD_NAME
           displayName: 'Make configure'
       postSteps:
         - publish: $(System.DefaultWorkingDirectory)/target
@@ -86,6 +87,36 @@ stages:
           env:
             StorageSASKey: $(SONIC_STORAGE_SASKEY)
           displayName: "Publish to Azure Storage"
+        - task: SSH@0
+          displayName: "Make soft links for trusty8"
+          inputs:
+            sshEndpoint: 'acs-trusty8'
+            runOptions: 'inline'
+            readyTimeout: '20000'
+            inline: |
+              echo "Make link for $(PUBLISH_BLOB_PREFIX)"
+              LINK_FOLDERNAMES=.
+              [ "$(SONIC_VERSION)" == "$(LATEST_TAG)" ] && LINK_FOLDERNAMES=". tagged"
+              for link_foldername in $LINK_FOLDERNAMES; do
+                latest_path=/azmirrors/$(PUBLISH_BLOB_PREFIX)/$(BUILD_NAME)/$(BUILD_NUMBER)
+                link_path=/data/$(dirname $(PUBLISH_BLOB_PREFIX))/$(BUILD_NAME)/$(BRANCH_NAME)/$link_foldername
+                mkdir -p $link_path
+                
+                # Make soft links for latest and prev
+                prev_link_path=$(realpath $link_path/latest)
+                [ -e $prev_link_path ] && ln -nsf "$prev_link_path" "$link_path/prev"
+                ln -nsf "$latest_path" "$link_path/latest"
+
+                # Make soft links for installers
+                installers_path=$link_path/installers
+                mkdir -p $installers_path
+                ln -sf $latest_path/target/sonic.version $installers_path/sonic.version
+                for installer in `cat $latest_path/target/sonic-installers`; do
+                  image=$(echo $installer | cut -d, -f1)
+                  version_image=$(echo $installer | cut -d, -f2)
+                  ln -sf $latest_path/target/$version_image $installers_path/$image
+                done
+              done
         - script: |
             SONIC_VERSION=$(cat $VERSION_PATH)
             PORT=443
@@ -138,59 +169,3 @@ stages:
             OPTIONS="$BUILD_OPTIONS ENABLE_NAT=n PASSWORD=$PASSWORD"
             make $OPTIONS ENABLE_RESTAPI=y target/docker-syncd-bfn-rpc.gz
             make $OPTIONS target/sonic-aboot-barefoot.swi
-- stage: Mklink
-  pool:
-    name: CDPCustom- sonic-build-agents
-    demands:
-    - AGENT_GROUP -equals SONIC_PHX
-  condition: always()
-  jobs:
-  - job: Mklink
-    variables:
-      MKLINK_SCRIPT: |
-        echo "Make link for $(PUBLISH_BLOB_PREFIX)"
-        PUBLISH_BLOB_PREFIX=$(PUBLISH_BLOB_PREFIX)
-        PUBLISH_PATH=/azmirrors/$PUBLISH_BLOB_PREFIX
-        LINK_ROOT=/data/$(dirname $PUBLISH_BLOB_PREFIX)
-        BRANCH_NAME=$(basename $PUBLISH_BLOB_PREFIX)
-        for platform in `ls $PUBLISH_PATH`; do
-          platform_path=$PUBLISH_PATH/$platform
-          if ! [ -f $platform_path/latest_build ]; then
-              echo "The file $platform_path/latest_build does not exist"
-              continue
-          fi
-          
-          latest_build=$(cat $platform_path/latest_build)
-          latest_path=$platform_path/$latest_build
-          if ! [ -d $latest_path ]; then
-              echo "The path $latest_path does not exist"
-              continue
-          fi
-          
-          # Make soft links for latest and prev
-          LINK_PATH=$LINK_ROOT/$platform/$BRANCH_NAME
-          mkdir -p $LINK_PATH
-          if [ -d $LINK_PATH/latest ] && [ "$(realpath $LINK_PATH/latest)" != "$latest_path" ]; then
-            ln -nsf "$(realpath $LINK_PATH/latest)" "$LINK_PATH/prev"
-          fi
-          ln -nsf "$latest_path" "$LINK_PATH/latest"
-
-          # Make soft links for installers
-          installers_path=$LINK_PATH/installers
-          mkdir -p $installers_path
-          ln -sf $latest_path/target/sonic.version $installers_path/sonic.version
-          for installer in `cat $latest_path/target/sonic-installers`; do
-            image=$(echo $installer | cut -d, -f1)
-            version_image=$(echo $installer | cut -d, -f2)
-            ln -sf $latest_path/target/$version_image $installers_path/$image
-          done
-        done
-    steps:
-    - script: |
-        echo "Make soft links"
-        ssh -tt -o UserKnownHostsFile=/dev/null \
-        -o LogLevel=error \
-        -o strictHostKeyChecking=no \
-        acs-trusty8.corp.microsoft.com \
-        "$MKLINK_SCRIPT"
-      displayName: "Make soft links for trusty8"
