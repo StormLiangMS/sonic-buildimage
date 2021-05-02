@@ -32,7 +32,7 @@ index 0000000..fa5f428
 + 1 file changed, 3 insertions(+), 2 deletions(-)
 +
 +diff --git a/debian/build/build_amd64_none_amd64/.config b/debian/build/build_amd64_none_amd64/.config
-+index 7e1c347..b90c9d9 100644
++index 718ae95..ab048d5 100644
 +--- a/debian/build/build_amd64_none_amd64/.config
 ++++ b/debian/build/build_amd64_none_amd64/.config
 +@@ -3469,7 +3469,7 @@ CONFIG_DEVMEM=y
@@ -44,7 +44,7 @@ index 0000000..fa5f428
 + CONFIG_SERIAL_8250_FINTEK=y
 + CONFIG_SERIAL_8250_CONSOLE=y
 + CONFIG_SERIAL_8250_DMA=y
-+@@ -3966,13 +3966,14 @@ CONFIG_SENSORS_LM25066=m
++@@ -3966,7 +3966,7 @@ CONFIG_SENSORS_LM25066=m
 + # CONFIG_SENSORS_MAX34440 is not set
 + CONFIG_SENSORS_DNI_DPS460=m
 + # CONFIG_SENSORS_MAX8688 is not set
@@ -53,7 +53,8 @@ index 0000000..fa5f428
 + CONFIG_SENSORS_TPS53679=m
 + CONFIG_SENSORS_UCD9000=m
 + CONFIG_SENSORS_UCD9200=m
-+ CONFIG_SENSORS_XDPE122=m
++@@ -3974,6 +3974,7 @@ CONFIG_SENSORS_XDPE122=m
++ CONFIG_SENSORS_MP2975=m
 + # CONFIG_SENSORS_ZL6100 is not set
 + CONFIG_SENSORS_DPS1900=m
 ++CONFIG_SENSORS_CISCO_N2200=m
