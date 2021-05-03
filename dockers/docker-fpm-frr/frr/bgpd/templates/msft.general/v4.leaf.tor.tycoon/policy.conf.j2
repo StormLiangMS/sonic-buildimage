@@ -6,12 +6,16 @@ bgp community-list standard TYCOON_ER_COMMUNITY permit 8075:10451
 bgp community-list standard SDN_APPLIANCE_COMMUNITY permit 8075:9302
 bgp community-list standard UPSTREAM_PREFIX permit 8075:54000
 bgp community-list standard drop_community permit no-export
+bgp community-list standard AVS_MGMT_COMMUNITY permit 8075:9304
+bgp community-list standard AZD_AVS_PUBLICIP_COMMUNITY permit 8075:9305
 !
 bgp as-path access-list BBR_AS_PATH permit ^[0-9]+_{{ asn_number }}
 !
 ip prefix-list DEFAULT_IPV4 permit 0.0.0.0/0
 ip prefix-list IPV4_30_OR_LONGER permit 0.0.0.0/0 ge 30
 ip prefix-list IPV4_27_OR_LONGER permit 0.0.0.0/0 ge 27
+ip prefix-list IPV4_25_OR_LONGER permit 0.0.0.0/0 ge 25
+ip prefix-list IPV4_20_OR_LONGER permit 0.0.0.0/0 ge 20
 !
 !
 {% if constants.bgp.allow_list is defined and constants.bgp.allow_list.enabled is defined and constants.bgp.allow_list.enabled and constants.bgp.allow_list.drop_community is defined %}
@@ -62,6 +66,18 @@ route-map FROM_TYCOON_ER_V4 permit 500
 route-map FROM_TYCOON_ER_V4 permit 600
   match community SDN_APPLIANCE_COMMUNITY
   match ip address prefix-list IPV4_27_OR_LONGER
+!
+{% if devicedownstream_subrole is defined and 'TycoonAVS' in devicedownstream_subrole %}
+!
+route-map FROM_TYCOON_ER_V4 permit 700 
+  match ip address prefix-list IPV4_25_OR_LONGER  
+  match community AVS_MGMT_COMMUNITY  
+!
+route-map FROM_TYCOON_ER_V4 permit 800
+  match ip address prefix-list IPV4_20_OR_LONGER
+  match community AZD_AVS_PUBLICIP_COMMUNITY
+!
+{% endif %}
 !
 route-map FROM_TYCOON_ER_V4 deny 10000
 !
