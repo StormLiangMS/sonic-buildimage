@@ -155,12 +155,12 @@ stages:
         - name: mellanox
           script: |
             OPTIONS="$BUILD_OPTIONS INCLUDE_RESTAPI=y PASSWORD=$PASSWORD"
-            make $OPTIONS INCLUDE_NAT=n target/sonic-mellanox.bin
-            make $OPTIONS INCLUDE_NAT=n ENABLE_SYNCD_RPC=y target/docker-syncd-mlnx-rpc.gz || true
+            make $OPTIONS INCLUDE_NAT=n INCLUDE_RESTAPI=y target/sonic-mellanox.bin
+            make $OPTIONS INCLUDE_NAT=n ENABLE_SYNCD_RPC=y INCLUDE_RESTAPI=y target/docker-syncd-mlnx-rpc.gz || true
             mv target/sonic-mellanox.bin target/release/
             cp target/debs/stretch/python-saithrift_0.9.4_amd64.deb target/python-saithrift_0.9.4_amd64.deb
 
-            make $OPTIONS INSTALL_DEBUG_TOOLS=y target/sonic-mellanox.bin
+            make $OPTIONS INSTALL_DEBUG_TOOLS=y INCLUDE_RESTAPI=y INCLUDE_NAT=n target/sonic-mellanox.bin
             mv target/sonic-mellanox.bin target/sonic-mellanox-dbg.bin
             mv target/release/* target/
         - name: barefoot
