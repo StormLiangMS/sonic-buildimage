@@ -126,3 +126,6 @@ KUBERNETES_CNI_VERSION = 0.8.6
 K8s_GCR_IO_PAUSE_VERSION = 3.2
 # INCLUDE_ACMS - build docker-acms for managing certificates on the device
 INCLUDE_ACMS = y
+# INCLUDE_VNET_MONITOR - build docker-vnet-monitor for vnetping utility on the device
+INCLUDE_VNET_MONITOR = n
+

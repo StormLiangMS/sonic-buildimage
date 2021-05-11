@@ -1,0 +1,7 @@
+###############################################################################
+## Monit configuration for VNET-MONITOR container
+## process list:
+##  vnetping
+###############################################################################
+check program vnetping|vnetping_server with path "/usr/bin/process_checker vnetping python /usr/bin/vnetpingsrv.py"
+    if status != 0 for 5 times within 5 cycles then alert repeat every 1 cycles
