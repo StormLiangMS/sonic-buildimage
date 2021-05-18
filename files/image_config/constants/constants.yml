@@ -51,6 +51,7 @@ constants:
       internal: # peer_type
         db_table: "BGP_INTERNAL_NEIGHBOR"
         template_dir: "internal"
+        community: "8075:9306"
       monitors: # peer_type
         enabled: true
         db_table: "BGP_MONITORS"
