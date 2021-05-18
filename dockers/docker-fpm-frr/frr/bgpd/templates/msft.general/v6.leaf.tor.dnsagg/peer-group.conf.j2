@@ -8,7 +8,7 @@
     neighbor DNS_AGG_V6_{{ neighbor_deployment_id }} route-map FROM_DNS_AGG_V6_{{ neighbor_deployment_id }} in
     neighbor DNS_AGG_V6_{{ neighbor_deployment_id }} route-map TO_DNS_AGG_V6 out
     neighbor DNS_AGG_V6_{{ neighbor_deployment_id }} send-community
-    neighbor DNS_AGG_V6_{{ neighbor_deployment_id }} maximum-prefix 20 50
+    neighbor DNS_AGG_V6_{{ neighbor_deployment_id }} maximum-prefix 4000 90 warning-only
   exit-address-family
 !
 ! end of template: bgpd/templates/msft.general/v6.leaf.tor.dnsagg/peer-group.conf.j2

@@ -22,7 +22,7 @@
 {%     elif device_type in ['LeafRouter', 'BackEndLeafRouter'] %}
 {%         if neighbor_type == 'SpineRouter' %}
 {%             include path_template % "v4.leaf.spine" %}
-{%         elif neighbor_type in ['ToRRouter', 'BackEndToRRouter'] %}
+{%         elif neighbor_type in ['ToRRouter', 'BackEndToRRouter', 'AggRouter'] %}
 {%             if neighbor_deployment_id is defined and neighbor_deployment_id == '26' %}
 {%                 include path_template % "v4.leaf.tor.tycoon" %}
 {%             else %}
@@ -41,7 +41,7 @@
 {%     elif device_type in ['LeafRouter', 'BackEndLeafRouter'] %}
 {%         if neighbor_type == 'SpineRouter' %}
 {%             include path_template % "v6.leaf.spine" %}
-{%         elif neighbor_type in ['ToRRouter', 'BackEndToRRouter'] %}
+{%         elif neighbor_type in ['ToRRouter', 'BackEndToRRouter', 'AggRouter'] %}
 {%             if neighbor_deployment_id is defined and neighbor_deployment_id == '26' %}
 {%                 include path_template % "v6.leaf.tor.tycoon" %}
 {%             elif neighbor_deployment_id is defined and neighbor_deployment_id == '19' %}
