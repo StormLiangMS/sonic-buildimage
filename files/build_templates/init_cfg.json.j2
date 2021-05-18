@@ -33,6 +33,7 @@
 {%- if include_sflow == "y" %}{% do features.append(("sflow", "disabled", false, "enabled")) %}{% endif %}
 {%- if include_system_telemetry == "y" %}{% do features.append(("telemetry", "enabled", true, "enabled")) %}{% endif %}
 {%- if include_acms == "y" %}{% do features.append(("acms", "enabled", false, "enabled")) %}{% endif %}
+{%- if include_vnet_monitor == "y" %}{% do features.append(("vnet_monitor", "enabled", false, "enabled")) %}{% endif %}
     "FEATURE": {
 {# has_timer field if set, will start the feature systemd .timer unit instead of .service unit #}
 {%- for feature, state, has_timer, autorestart in features %}
