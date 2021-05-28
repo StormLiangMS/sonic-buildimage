@@ -11,6 +11,14 @@ name: $(TeamProject)_$(Build.DefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd
 
 pool: sonic-image-builder
 
+parameters:
+- name: 'jobFilters'
+  type: object
+  default:
+  - vs
+  - broadcom
+  - mellanox
+
 variables:
 - group: SONIC-BUILD-VG-1
 - name: PUBLISH_BLOB_PREFIX
