@@ -1,13 +1,10 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
 
 trigger:
   batch: true
   branches:
     include:
     - internal-201911
+    - internal-202012
 pr: none
 
 name: $(TeamProject)_$(Build.DefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
@@ -29,8 +26,11 @@ stages:
     BUILD_OPTIONS: 'SONIC_BUILD_JOBS=4 ENABLE_DHCP_GRAPH_SERVICE=y SHUTDOWN_BGP_ON_START=y ENABLE_PFCWD_ON_START=y'
     VERSION_PATH: target/sonic.version
   jobs:
-  - template: OneBranch-template.yml
+  - template: ../.azure-pipelines/azure-pipelines-job-groups.yml
     parameters:
+      scriptEnv:
+        PASSWORD: '$(PASSWORD)'
+      jobFilters: ${{ parameters.jobFilters }}
       preSteps:
         - script: |
             sudo rm -rf target
@@ -56,11 +56,11 @@ stages:
             echo "SONIC_VERSION=$SONIC_VERSION, LATEST_TAG=$LATEST_TAG"
             echo "##vso[task.setvariable variable=SONIC_VERSION]$SONIC_VERSION"
             echo "##vso[task.setvariable variable=LATEST_TAG]$LATEST_TAG"
-            make configure PLATFORM=$BUILD_NAME
+            make configure PLATFORM=$GROUP_NAME
           displayName: 'Make configure'
       postSteps:
         - publish: $(System.DefaultWorkingDirectory)/target
-          artifact: 'sonic-buildimage.$(BUILD_NAME)'
+          artifact: 'sonic-buildimage.$(GROUP_NAME)'
           displayName: "Archive sonic image"
         - script: |
             for image in `ls target | grep -E "\.(swi|bin|raw|deb)$"`; do
@@ -75,7 +75,7 @@ stages:
             wget -O azcopy_v10.tar.gz https://aka.ms/downloadazcopy-v10-linux && tar -xf azcopy_v10.tar.gz --strip-components=1
             popd
             export AZCOPY_LOG_LOCATION=$(pwd)/azcopy
-            PUBLISH_PLATFORM_URL="https://$(SONIC_STORAGE_ACCOUNT).blob.core.windows.net/images/$(PUBLISH_BLOB_PREFIX)/$BUILD_NAME"
+            PUBLISH_PLATFORM_URL="https://$(SONIC_STORAGE_ACCOUNT).blob.core.windows.net/images/$(PUBLISH_BLOB_PREFIX)/$GROUP_NAME"
             PUBLISH_URL="$PUBLISH_PLATFORM_URL/$(Build.BuildId)$StorageSASKey"
             azcopy/azcopy copy target "$PUBLISH_PLATFORM_URL/$(Build.BuildId)$StorageSASKey" --recursive=true --put-md5
             touch prev_build
@@ -98,13 +98,21 @@ stages:
               LINK_FOLDERNAMES=.
               [ "$(SONIC_VERSION)" == "$(LATEST_TAG)" ] && LINK_FOLDERNAMES=". tagged"
               for link_foldername in $LINK_FOLDERNAMES; do
-                latest_path=/azmirrors/$(PUBLISH_BLOB_PREFIX)/$(BUILD_NAME)/$(BUILD_NUMBER)
-                link_path=/data/$(dirname $(PUBLISH_BLOB_PREFIX))/$(BUILD_NAME)/$(BRANCH_NAME)/$link_foldername
+                LATEST_VERSION=
+                PREVIOUS_VERSION=
+                latest_path=/azmirrors/$(PUBLISH_BLOB_PREFIX)/$(GROUP_NAME)/$(BUILD_NUMBER)
+                link_path=/data/$(dirname $(PUBLISH_BLOB_PREFIX))/$(GROUP_NAME)/$(BRANCH_NAME)/$link_foldername
+                [ -e $link_path/latest ] && LATEST_VERSION=$(cat $link_path/latest/target/sonic.version)
                 mkdir -p $link_path
-                
+
                 # Make soft links for latest and prev
                 prev_link_path=$(realpath $link_path/latest)
-                [ -e $prev_link_path ] && ln -nsf "$prev_link_path" "$link_path/prev"
+                # If the latest version in the storage account is the same as the current build version, not update the prev link
+                if [ -e $prev_link_path ] && [ "$LATEST_VERSION" != "$(SONIC_VERSION)" ]; then
+                  [ -L $link_path/prev ] && PREVIOUS_VERSION=$(cat $link_path/prev/target/sonic.version)
+                  ln -nsf "$prev_link_path" "$link_path/prev"
+                fi
+
                 ln -nsf "$latest_path" "$link_path/latest"
 
                 # Make soft links for installers
@@ -115,7 +123,14 @@ stages:
                   image=$(echo $installer | cut -d, -f1)
                   version_image=$(echo $installer | cut -d, -f2)
                   ln -sf $latest_path/target/$version_image $installers_path/$image
+                  ln -sf $latest_path/target/$version_image $link_path/$version_image
+                  ln -sf latest/target/$image $link_path/$image
+                  ln -sf prev/target/$image $link_path/$image.PREV.1
                 done
+
+                # Remove the old soft links
+                echo "PREVIOUS_VERSION=$PREVIOUS_VERSION"
+                [ -n "$PREVIOUS_VERSION" ] && rm -f $link_path/*"$PREVIOUS_VERSION"*
               done
         - script: |
             SONIC_VERSION=$(cat $VERSION_PATH)
@@ -136,7 +151,7 @@ stages:
             sudo rm -rf fsroot
             docker rmi -f $(docker images docker-* -a -q | grep docker-) || true
           displayName: "CleanUp"
-      stepGroups:
+      jobGroups:
         - name: vs
           script: |
             make target/sonic-vs.bin target/sonic-vs.img.gz
