@@ -4,7 +4,7 @@
 This script will call dSMS GetIssuers API to download AME Root Certificate
 '''
 
-import os, re, shutil
+import os, re, shutil, time
 import urllib, urllib2
 import json
 from sonic_py_common import logger
@@ -62,18 +62,27 @@ def get_cert(ca, url):
     payload = {'caname': ca}
     url = url+"&"+urllib.urlencode(payload)
     req = urllib2.Request(url)
-    response = urllib2.urlopen(req)
-    sonic_logger.log_info("CA_cert_downloader: get_cert: URL: "+url)
-    if response.getcode() == 200:
+    while True:
         try:
-            json_response = json.loads(response.read())
-            extract_cert(json_response)
-        except ValueError as e:
-            sonic_logger.log_error("CA_cert_downloader: get_cert: Invalid JSON response!")
-    else:
-        sonic_logger.log_error("CA_cert_downloader: get_cert: GET request failed!")
-        return False
-    return True
+            response = urllib2.urlopen(req)
+            sonic_logger.log_info("CA_cert_downloader: get_cert: URL: "+url)
+            if response.getcode() == 200:
+                try:
+                    json_response = json.loads(response.read())
+                    extract_cert(json_response)
+                    return True
+                except ValueError as e:
+                    sonic_logger.log_error("CA_cert_downloader: get_cert: Invalid JSON response!")
+            else:
+                sonic_logger.log_error("CA_cert_downloader: get_cert: GET request failed!")
+                return False
+        except urllib2.URLError as e:
+            sonic_logger.log_error("CA_cert_downloader: get_cert: Unable to reach "+url)
+            sonic_logger.log_error("CA_cert_downloader: get_cert: "+str(e.reason))
+            # Retry every 5 min
+            sonic_logger.log_error("CA_cert_downloader: get_cert: Retrying in 5min!")
+            time.sleep(60 * 5)
+
 
 def main():
     if get_cert(CERTIFICATE_AUTHORITY, API_URL):
