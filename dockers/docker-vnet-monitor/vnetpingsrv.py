@@ -30,7 +30,7 @@ def tcpserver(serverport):
             TCP_SYNACK = TCP(sport=dstport, dport=srcport, flags=flag, seq=seqno, ack=ackno, options=[(configutil.DEFAULT_TCP_OPTIONS, b'\0')])
             ANSWER = send(ip / TCP_SYNACK, verbose=0)
         except IndexError as ie:
-            vnetlogger.log_info("IndexError {0}".format(str(ie)))
+            vnetlogger.log_info("vnetpingsrv: IndexError {0}".format(str(ie)))
 
     # Process packets
     def _processpackets(packet):
@@ -50,7 +50,7 @@ def tcpserver(serverport):
     # Wait for client to connect.
     sniffstring = "udp and dst host " + loopbackip + " and dst port " + str(serverport)
     while True:
-        sniff(filter=sniffstring, prn=_processpackets)
+        sniff(filter=sniffstring, prn=_processpackets, store=False)
 
 
 #
