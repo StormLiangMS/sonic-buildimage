@@ -58,6 +58,7 @@ stages:
             SONIC_VERSION=$(sonic_get_version)
             echo SONIC_VERSION=${SONIC_VERSION} > sonic.properties
             LATEST_TAG=$(git describe --tags --abbrev=0)
+            [[ $LATEST_TAG == *-merge ]] && LATEST_TAG=
             mkdir -p target/release
             rm -f target/sonic-installers
             echo $SONIC_VERSION > $VERSION_PATH
@@ -174,6 +175,7 @@ stages:
             mv target/sonic-broadcom.bin target/sonic-aboot-broadcom.swi target/release/
 
             make $OPTIONS INSTALL_DEBUG_TOOLS=y target/sonic-broadcom.bin target/sonic-aboot-broadcom.swi
+            cp target/debs/stretch/python-saithrift_0.9.4_amd64.deb target/python-saithrift_0.9.4_amd64.deb
             mv target/sonic-broadcom.bin target/sonic-broadcom-dbg.bin
             mv target/sonic-aboot-broadcom.swi target/sonic-aboot-broadcom-dbg.swi
             mv target/release/* target/
