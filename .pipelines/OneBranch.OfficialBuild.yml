@@ -40,14 +40,7 @@ stages:
         PASSWORD: '$(PASSWORD)'
       jobFilters: ${{ parameters.jobFilters }}
       preSteps:
-        - script: |
-            sudo rm -rf target
-            sudo rm -rf fsroot
-            if [ ! -z $HOME ]; then
-              sudo mkdir -p $HOME
-              sudo chown $USER:$(id -gn) $HOME
-            fi
-          displayName: 'Init'
+        - template: ../.azure-pipelines/cleanup.yml
         - checkout: self
           clean: true
           submodules: recursive
