@@ -22,7 +22,7 @@
 {%     elif device_type in ['LeafRouter', 'BackEndLeafRouter'] %}
 {%         if neighbor_type == 'SpineRouter' %}
 {%             include path_template % "v4.leaf.spine" %}
-{%         elif neighbor_type in ['ToRRouter', 'BackEndToRRouter', 'AggRouter'] %}
+{%         elif neighbor_type in ['ToRRouter', 'BackEndToRRouter', 'AggRouter', 'VpnAggregator'] %}
 {%             if neighbor_deployment_id is defined and neighbor_deployment_id == '26' %}
 {%                 include path_template % "v4.leaf.tor.tycoon" %}
 {%             else %}
@@ -34,6 +34,8 @@
 {%             else %}
 {%                 include path_template % "v4.leaf.msee" %}
 {%             endif %}
+{%         else %}
+{%                 include path_template % "v4.leaf.tor.all" %}
 {%         endif %}
 {%     endif %}
 {% endif %}
@@ -45,7 +47,7 @@
 {%     elif device_type in ['LeafRouter', 'BackEndLeafRouter'] %}
 {%         if neighbor_type == 'SpineRouter' %}
 {%             include path_template % "v6.leaf.spine" %}
-{%         elif neighbor_type in ['ToRRouter', 'BackEndToRRouter', 'AggRouter'] %}
+{%         elif neighbor_type in ['ToRRouter', 'BackEndToRRouter', 'AggRouter', 'VpnAggregator'] %}
 {%             if neighbor_deployment_id is defined and neighbor_deployment_id == '26' %}
 {%                 include path_template % "v6.leaf.tor.tycoon" %}
 {%             elif neighbor_deployment_id is defined and neighbor_deployment_id == '19' %}
@@ -61,6 +63,8 @@
 {%             else %}
 {%                 include path_template % "v6.leaf.msee" %}
 {%             endif %}
+{%         else %}
+{%                 include path_template % "v6.leaf.tor.all" %}
 {%         endif %}
 {%     endif %}
 {% endif %}
