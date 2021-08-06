@@ -40,10 +40,12 @@ class SfpUtil(SfpUtilCisco):
         return self._port_to_eeprom_mapping
 
     def __init__(self):
-        eeprom_path = "/sys/class/i2c-adapter/i2c-{0}/{0}-0050/eeprom"
+        #eeprom_path = "/sys/class/i2c-adapter/i2c-{0}/{0}-0050/eeprom"
+        eeprom_path = "/sys/class/mifpga/mifpga/port_{0}/port_data_{0}"
 
         for x in range(0, self.PORT_END + 1):
-            self._port_to_eeprom_mapping[x] = eeprom_path.format(x + self.EEPROM_OFFSET)
+            self._port_to_eeprom_mapping[x] = eeprom_path.format(x + 1)
+            #self._port_to_eeprom_mapping[x] = eeprom_path.format(x + EEPROM_OFFSET)
 
         super(SfpUtil, self).__init__()
 
