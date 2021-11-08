@@ -18,6 +18,9 @@ parameters:
   - vs
   - broadcom
   - mellanox
+- name: 'trusty8LinkPath'
+  type: string
+  default: 'default'
 
 variables:
 - group: SONIC-BUILD-VG-1
@@ -50,11 +53,11 @@ stages:
             . functions.sh
             SONIC_VERSION=$(sonic_get_version)
             echo SONIC_VERSION=${SONIC_VERSION} > sonic.properties
-            LATEST_TAG=$(git describe --tags --abbrev=0)
-            [[ $LATEST_TAG == *-merge ]] && LATEST_TAG=
+            LATEST_TAG=$(git tag --points-at HEAD | grep -v -e '.*-merge' | head -n 1)
             mkdir -p target/release
             rm -f target/sonic-installers
             echo $SONIC_VERSION > $VERSION_PATH
+            echo $LATEST_TAG > target/sonic.tag
             echo "SONIC_VERSION=$SONIC_VERSION, LATEST_TAG=$LATEST_TAG"
             echo "##vso[task.setvariable variable=SONIC_VERSION]$SONIC_VERSION"
             echo "##vso[task.setvariable variable=LATEST_TAG]$LATEST_TAG"
@@ -77,7 +80,7 @@ stages:
             wget -O azcopy_v10.tar.gz https://aka.ms/downloadazcopy-v10-linux && tar -xf azcopy_v10.tar.gz --strip-components=1
             popd
             export AZCOPY_LOG_LOCATION=$(pwd)/azcopy
-            PUBLISH_PLATFORM_URL="https://$(SONIC_STORAGE_ACCOUNT).blob.core.windows.net/images/$(PUBLISH_BLOB_PREFIX)/$GROUP_NAME"
+            PUBLISH_PLATFORM_URL="https://$(SONIC_STORAGE_ACCOUNT).blob.core.windows.net/images/$(PUBLISH_BLOB_PREFIX)/$(GROUP_NAME)"
             PUBLISH_URL="$PUBLISH_PLATFORM_URL/$(Build.BuildId)$StorageSASKey"
             azcopy/azcopy copy target "$PUBLISH_PLATFORM_URL/$(Build.BuildId)$StorageSASKey" --recursive=true --put-md5
             touch prev_build
@@ -103,9 +106,17 @@ stages:
                 LATEST_VERSION=
                 PREVIOUS_VERSION=
                 latest_path=/azmirrors/$(PUBLISH_BLOB_PREFIX)/$(GROUP_NAME)/$(BUILD_NUMBER)
-                link_path=/data/$(dirname $(PUBLISH_BLOB_PREFIX))/$(GROUP_NAME)/$(BRANCH_NAME)/$link_foldername
+                BRANCH_NAME=$(BRANCH_NAME)
+                [[ "${{ parameters.trusty8LinkPath }}" != 'default' ]] && BRANCH_NAME=${{ parameters.trusty8LinkPath }}
+                link_path=/data/$(dirname $(PUBLISH_BLOB_PREFIX))/$(GROUP_NAME)/$BRANCH_NAME/$link_foldername
                 [ -e $link_path/latest ] && LATEST_VERSION=$(cat $link_path/latest/target/sonic.version)
                 mkdir -p $link_path
+
+                # Skip the change if the latest version is existed
+                if [ "$LATEST_VERSION" = "$(SONIC_VERSION)" ]; then
+                  echo "Skipped to update the symbol links for version $(SONIC_VERSION) in $link_path"
+                  continue
+                fi
 
                 # Make soft links for latest and prev
                 prev_link_path=$(realpath $link_path/latest)
@@ -131,9 +142,13 @@ stages:
                 done
 
                 # Remove the old soft links
-                echo "PREVIOUS_VERSION=$PREVIOUS_VERSION"
-                if [ -n "$PREVIOUS_VERSION" ]; then
-                  rm -f $link_path/*"$PREVIOUS_VERSION"*
+                if [ "$link_foldername" != "tagged" ]; then
+                  echo "Remove the old symbol links in $link_foldername"
+                  if [ -n "$PREVIOUS_VERSION" ]; then
+                    rm -f $link_path/*"$PREVIOUS_VERSION"*
+                  fi
+                else
+                  echo "Skipped to remove the old symbol links in $link_foldername"
                 fi
               done
         - script: |
