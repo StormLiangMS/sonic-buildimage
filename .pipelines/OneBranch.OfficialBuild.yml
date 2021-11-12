@@ -177,10 +177,10 @@ stages:
         - name: broadcom
           script: |
             OPTIONS="$BUILD_OPTIONS PASSWORD=$PASSWORD"
-            make $OPTIONS target/sonic-broadcom.bin target/sonic-aboot-broadcom.swi || true
+            make $OPTIONS target/sonic-broadcom.bin target/sonic-broadcom.raw target/sonic-aboot-broadcom.swi || true
             make $OPTIONS target/sonic-nbi-broadcom.bin || true
             make $OPTIONS ENABLE_SYNCD_RPC=y target/docker-syncd-brcm-rpc.gz || true
-            mv target/sonic-broadcom.bin target/sonic-aboot-broadcom.swi target/release/
+            mv target/sonic-broadcom.bin target/sonic-broadcom.raw target/sonic-aboot-broadcom.swi target/release/
 
             make $OPTIONS INSTALL_DEBUG_TOOLS=y target/sonic-broadcom.bin target/sonic-aboot-broadcom.swi
             cp target/debs/stretch/python-saithrift_0.9.4_amd64.deb target/python-saithrift_0.9.4_amd64.deb
