@@ -234,6 +234,11 @@ sudo LANG=C cp $IMAGE_CONFIGS/watchdog-control/watchdog-control.sh $FILESYSTEM_R
 sudo LANG=C cp $IMAGE_CONFIGS/watchdog-control/watchdog-control.service $FILESYSTEM_ROOT_USR_LIB_SYSTEMD_SYSTEM
 echo "watchdog-control.service" | sudo tee -a $GENERATED_SERVICE_FILE
 
+# Copy lossless buffer mitigation files
+sudo LANG=C cp $IMAGE_CONFIGS/lossless-buffer-mitigation/lossless-buffer-mitigation.sh $FILESYSTEM_ROOT/usr/local/bin/lossless-buffer-mitigation.sh
+sudo LANG=C cp $IMAGE_CONFIGS/lossless-buffer-mitigation/lossless-buffer-mitigation.service $FILESYSTEM_ROOT_USR_LIB_SYSTEMD_SYSTEM
+echo "lossless-buffer-mitigation.service" | sudo tee -a $GENERATED_SERVICE_FILE
+
 # Copy rsyslog configuration files and templates
 sudo cp $IMAGE_CONFIGS/rsyslog/rsyslog-config.service $FILESYSTEM_ROOT_USR_LIB_SYSTEMD_SYSTEM
 sudo cp $IMAGE_CONFIGS/rsyslog/rsyslog-config.sh $FILESYSTEM_ROOT/usr/bin/

@@ -1,0 +1,9 @@
+[Unit]
+Description=Mitigation Service to creates Lossless Buffer Profile and Bind to TC
+After=swss.service
+
+[Service]
+ExecStart=/usr/local/bin/lossless-buffer-mitigation.sh
+
+[Install]
+WantedBy=multi-user.target
