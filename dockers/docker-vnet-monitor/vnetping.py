@@ -11,6 +11,7 @@ import argparse
 import logging
 from scapy.all import *
 from sys import argv, exit
+import threading
 import configutil
 from sonic_py_common import logger
 
@@ -18,6 +19,10 @@ from sonic_py_common import logger
 # Config
 #
 PRINT_TO_CONSOLE = True
+PACKET_COUNT = 4
+TIMEOUT_SNIFFING = 15
+TIMEOUT_INTERVAL = 1
+receivedtime = []
 
 #
 # Global logger instance
@@ -42,13 +47,7 @@ class TcpSession:
         self.vlanifname = target[4]
         self.loopbackip = target[5]
         self.dutmac = target[6]
-        self._ackThread = None
-        self._timeout = 3
-        self.ip = IP(src=self.srcip, dst=self.dstip)
         self.ttl = configutil.DEFAULT_TTL
-        self.sentpackets = 0
-        self.receivedpackets = 0
-        self.rttms = 0
         self.verbose = 0
         self.random_mac = '00:01:02:03:04:05'
 
@@ -57,35 +56,38 @@ class TcpSession:
     # Connect to a TCP server.
     #
 
-    def connect(self):
+    def connect(self, senttime):
         self.seq = random.randrange(0,(2**32)-1)
 
         ip = IP(src=self.srcip, dst=self.dstip, ttl=self.ttl)
-
         tcpsync = Ether(src=self.random_mac, dst=self.dutmac)/ip/TCP(dport=self.dport, seq=self.seq, flags='S', options=[(configutil.DEFAULT_TCP_OPTIONS, b'\0')])
-        syn_ack = srp1(tcpsync, iface=self.vlanifname, timeout=self._timeout, verbose=self.verbose)
+        sendp(tcpsync, iface=self.vlanifname, verbose=self.verbose)
+        senttime.append(tcpsync.sent_time)
         self.seq += 1
-        self.sentpackets += 1
-
-        if syn_ack:
-            self.receivedpackets += 1
-            if syn_ack.time and tcpsync.sent_time:
-                self.rttms = (syn_ack.time - tcpsync.sent_time) * 1000
-                vnetlogger.log_info("Reply from {0}: time={1}.2fms TTL={2}".format(self.dstip, self.rttms, self.ttl), PRINT_TO_CONSOLE)
-            else:
-                vnetlogger.log_info("Reply from {0}: TTL={1}".format(self.dstip, self.ttl), PRINT_TO_CONSOLE)
-        elif self.srcip == self.loopbackip:
-            vnetlogger.log_info("Request timed out.", PRINT_TO_CONSOLE)
-
 
     #
-    # Close a connect to a TCP server.
+    # Sniffing thread
     #
 
-    def close(self):
-        self.seq = random.randrange(0, (2**32)-1)
-        ack = self.ip/TCP(dport=self.dport, seq=self.seq, flags='R', options=[(configutil.DEFAULT_TCP_OPTIONS, b'\0')])
-        send(ack, verbose = self.verbose)
+    def sniff_thread(self):
+        def _processpackets(packet):
+            global receivedtime
+            receivedtime.append(packet.time)
+            vnetlogger.log_info("    Reply at {0}: {1}.".format(packet.sniffed_on, packet.summary()), PRINT_TO_CONSOLE)
+
+        loopbackip = configutil.get_loopback_ipv4()
+        sniffstring = "tcp and (tcp[tcpflags] & (tcp-syn | tcp-ack) == (tcp-syn | tcp-ack)) and dst host " + loopbackip + " and src port " + str(configutil.DEFAULT_TCP_PORT)
+        pchandler = configutil.PortChannelHandler()
+        iface_list = pchandler.get_up_portchannels()
+        sniff(filter=sniffstring, prn=_processpackets, iface=iface_list, store=False, count=PACKET_COUNT, timeout=TIMEOUT_SNIFFING)
+
+    #
+    # Start sniffing thread
+    #
+
+    def run_thread(self):
+        thread_sniffing = threading.Thread(target=self.sniff_thread)
+        thread_sniffing.start()
 
 ####
 
@@ -104,6 +106,7 @@ def main(argv):
 
     logging.getLogger("scapy").setLevel(logging.CRITICAL)
     vnetlogger.set_min_log_priority_info()
+    configutil.vnetlogger.set_min_log_priority_info()
 
     vnetname = args.vnetname
     srcip = args.srcip
@@ -126,19 +129,19 @@ def main(argv):
             srcip = loopbackip
 
     tcp_hs = TcpSession((srcip, dstip, dstport, monvlanid, monvlanifname, loopbackip, dutmac))
+    tcp_hs.run_thread()
+    senttime = []
 
-    for x in range(4):
-        tcp_hs.connect()
-        tcp_hs.close()
-        time.sleep(0.5)
+    for x in range(PACKET_COUNT):
+        time.sleep(TIMEOUT_INTERVAL)
+        tcp_hs.connect(senttime)
 
-    if srcip == loopbackip:
-        lostrate = (tcp_hs.sentpackets - tcp_hs.receivedpackets) * 100 / tcp_hs.sentpackets
-        vnetlogger.log_info("Ping statistics for {0}:".format(dstip), PRINT_TO_CONSOLE)
-        vnetlogger.log_info("    Packets: Sent = {0}, Received = {1}, Lost = {2} ({3}%% loss)".format(tcp_hs.sentpackets, tcp_hs.receivedpackets, lostrate, lostrate), PRINT_TO_CONSOLE)
-    else:
-        vnetlogger.log_info("{0} packets sent".format(tcp_hs.sentpackets), PRINT_TO_CONSOLE)
-
+    time.sleep(TIMEOUT_INTERVAL)
+    sentpackets = len(senttime)
+    receivedpackets = len(receivedtime)
+    lostrate = (sentpackets - receivedpackets) * 100 / sentpackets
+    vnetlogger.log_info("Ping statistics for {0}:".format(dstip), PRINT_TO_CONSOLE)
+    vnetlogger.log_info("    Packets: Sent = {0}, Received = {1}, Lost = {2} ({3}% loss)".format(sentpackets, receivedpackets, lostrate, lostrate), PRINT_TO_CONSOLE)
 
 #
 # Program entry

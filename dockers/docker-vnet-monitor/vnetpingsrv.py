@@ -3,6 +3,14 @@
 from scapy.all import *
 import configutil
 from sonic_py_common import logger
+import time
+from datetime import timedelta
+
+#
+# Config
+#
+PRINT_TO_CONSOLE = False
+RESTART_INTERVAL = 60
 
 #
 # Global logger instance
@@ -26,9 +34,9 @@ def tcpserver(serverport):
             dstport = innerpacket[TCP].dport
 
             # send SYNACK to remote host
-            ip = IP(src=dstip, dst=srcip)
-            TCP_SYNACK = TCP(sport=dstport, dport=srcport, flags=flag, seq=seqno, ack=ackno, options=[(configutil.DEFAULT_TCP_OPTIONS, b'\0')])
-            ANSWER = send(ip / TCP_SYNACK, verbose=0)
+            TCP_SYNACK = IP(src=dstip, dst=srcip)/TCP(sport=dstport, dport=srcport, flags=flag, seq=seqno, ack=ackno, options=[(configutil.DEFAULT_TCP_OPTIONS, b'\0')])
+            ANSWER = send(TCP_SYNACK, verbose=0)
+            vnetlogger.log_info("vnetpingsrv: reply packet {0}.".format(TCP_SYNACK.summary()), PRINT_TO_CONSOLE)
         except IndexError as ie:
             vnetlogger.log_info("vnetpingsrv: IndexError {0}".format(str(ie)))
 
@@ -49,8 +57,28 @@ def tcpserver(serverport):
     loopbackip = configutil.get_loopback_ipv4()
     # Wait for client to connect.
     sniffstring = "udp and dst host " + loopbackip + " and dst port " + str(serverport)
+    vnetlogger.log_info("vnetpingsrv: sniff filter is {0}".format(sniffstring), PRINT_TO_CONSOLE)
+    pchandler = configutil.PortChannelHandler()
+    iface_list = pchandler.get_up_portchannels()
+    vnetlogger.log_info("vnetpingsrv: sniff on interfaces -- {0}".format(iface_list), PRINT_TO_CONSOLE)
+    
+    sniffer = AsyncSniffer(filter=sniffstring, prn=_processpackets, iface=iface_list, store=False)
+    sniffer.start()
+    starttime = time.time()
     while True:
-        sniff(filter=sniffstring, prn=_processpackets, store=False)
+        msgs = pchandler.wait_for_netlink_msgs()
+        if pchandler.sniffer_restart_required(msgs):
+            # wait for at least RESTART_INTERVAL seconds to restart the sniffing, to handle flapping cases
+            elapsedseconds = timedelta(seconds=(time.time() - starttime)).total_seconds()
+            if elapsedseconds < RESTART_INTERVAL:
+                time.sleep(RESTART_INTERVAL)
+
+            sniffer.stop()
+            iface_list = pchandler.get_up_portchannels()
+            sniffer = AsyncSniffer(filter=sniffstring, prn=_processpackets, iface=iface_list, store=False)
+            vnetlogger.log_notice('vnetpingsrv:  Restarting sniffing on interfaces -- {0}'.format(iface_list), PRINT_TO_CONSOLE)
+            sniffer.start()
+            starttime = time.time()
 
 
 #
@@ -61,6 +89,7 @@ def main():
     vnetlogger.set_min_log_priority_info()
     bind_layers(UDP, VXLAN, sport=configutil.DEFAULT_VXLAN_PORT)
     bind_layers(UDP, VXLAN, dport=configutil.DEFAULT_VXLAN_PORT)
+    configutil.vnetlogger.set_min_log_priority_info()
     tcpserver(configutil.DEFAULT_VXLAN_PORT)
 
 
