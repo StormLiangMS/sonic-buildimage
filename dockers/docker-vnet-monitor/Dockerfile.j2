@@ -15,6 +15,8 @@ RUN apt-get update &&     \
 RUN pip2 install --upgrade pip
 RUN apt-get purge -y python-pip
 RUN pip2 install 'scapy==2.4.4'
+RUN pip2 install 'pyroute2==0.5.14'
+RUN pip2 install py2_ipaddress
 
 {% if docker_vnet_monitor_debs.strip() -%}
 # Copy locally-built Debian package dependencies
