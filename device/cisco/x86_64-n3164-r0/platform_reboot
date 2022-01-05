@@ -1,0 +1,19 @@
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides: reboot-n92xx
+# Short-Description: Platform reboot mechanism
+# Description: This script is responsible for handling reboot for n92xx
+#              platform.
+### END INIT INFO
+
+echo -n "Platform Rebooting... "
+
+
+GPIO=133
+
+echo 1 > /sys/class/gpio/gpio$GPIO/value
+
+sleep 1
+
+# We should not reach here. If we do, standard CPU reboot will follow
+
