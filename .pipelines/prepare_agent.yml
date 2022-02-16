@@ -1,0 +1,25 @@
+steps:
+  - script: |
+      set -ex
+      if [[ $(GROUP_NAME) == 'marvell-armhf' ]];then
+        exit 0
+      fi
+
+      if [ ! -d /nfs ];then
+        sudo mkdir /nfs
+        sudo mount -t nfs -o sec=sys,vers=4.1 172.16.131.132:/vol1 /nfs
+      fi
+      if [ ! -d /data ];then
+        sudo mkdir /data
+        diskname=$(lsblk | grep $(DISK_SIZE) | awk '{print$1}')
+        sudo sgdisk -n 0:0:0 -t 0:8300 -c 0:data /dev/${diskname}
+        sudo mkfs.ext4 -F /dev/${diskname}
+        sudo mount /dev/${diskname} /data
+      fi
+      if ! docker info | grep -i root | grep data;then
+        sudo systemctl stop docker
+        sudo sed -i 's#--data-root /mnt/docker#--data-root /data/docker#' /lib/systemd/system/docker.service
+        sudo systemctl daemon-reload
+        sudo systemctl start docker
+      fi
+    displayName: 'prepare 1ES agent'

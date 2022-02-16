@@ -43,6 +43,7 @@ stages:
         PASSWORD: '$(PASSWORD)'
       jobFilters: ${{ parameters.jobFilters }}
       preSteps:
+        - template: prepare_agent.yml
         - template: ../.azure-pipelines/cleanup.yml
         - checkout: self
           clean: true
