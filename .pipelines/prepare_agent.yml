@@ -1,7 +1,8 @@
 steps:
   - script: |
       set -ex
-      if [[ $(GROUP_NAME) == 'marvell-armhf' ]];then
+      if [[ $PLATFORM_ARCH == arm* ]];then
+        echo arm agent, skip.
         exit 0
       fi
 
@@ -11,10 +12,16 @@ steps:
       fi
       if [ ! -d /data ];then
         sudo mkdir /data
-        diskname=$(lsblk | grep $(DISK_SIZE) | awk '{print$1}')
-        sudo sgdisk -n 0:0:0 -t 0:8300 -c 0:data /dev/${diskname}
-        sudo mkfs.ext4 -F /dev/${diskname}
-        sudo mount /dev/${diskname} /data
+        if [ ! -e /dev/disk/azure/scsi1/lun0 ];then
+          echo Additional disk not found.
+          lsblk
+          exit 1
+        fi
+        if [ ! -e /dev/disk/azure/scsi1/lun0-part1 ];then
+          sudo sgdisk -n 0:0:0 -t 0:8300 -c 0:data /dev/disk/azure/scsi1/lun0
+          sudo mkfs.ext4 -F /dev/disk/azure/scsi1/lun0-part1
+        fi
+        sudo mount /dev/disk/azure/scsi1/lun0-part1 /data
       fi
       if ! docker info | grep -i root | grep data;then
         sudo systemctl stop docker
@@ -22,4 +29,6 @@ steps:
         sudo systemctl daemon-reload
         sudo systemctl start docker
       fi
+      df -h
+      lsblk
     displayName: 'prepare 1ES agent'
