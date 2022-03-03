@@ -17,11 +17,10 @@ steps:
           lsblk
           exit 1
         fi
-        if [ ! -e /dev/disk/azure/scsi1/lun0-part1 ];then
-          sudo sgdisk -n 0:0:0 -t 0:8300 -c 0:data /dev/disk/azure/scsi1/lun0
-          sudo mkfs.ext4 -F /dev/disk/azure/scsi1/lun0-part1
-        fi
-        sudo mount /dev/disk/azure/scsi1/lun0-part1 /data
+        disk=$(realpath /dev/disk/azure/scsi1/lun0)
+        sudo sgdisk -n 0:0:0 -t 0:8300 -c 0:data $disk
+        sudo mkfs.ext4 -F ${disk}1 || true
+        sudo mount ${disk}1 /data
       fi
       if ! docker info | grep -i root | grep data;then
         sudo systemctl stop docker
