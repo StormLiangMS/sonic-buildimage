@@ -1,6 +1,7 @@
 steps:
   - script: |
       set -ex
+      sudo pip3 install jinja2==3.0.0
       if [[ $PLATFORM_ARCH == arm* ]];then
         echo arm agent, skip.
         exit 0
