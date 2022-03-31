@@ -10,7 +10,7 @@ import json
 from sonic_py_common import logger
 
 CERTIFICATE_AUTHORITY = "ame"
-API_URL = "https://ussouth-dsms.dsms.core.windows.net/dsms/issuercertificates?getissuersv2"
+API_URL = "https://ussouth-dsms.dsms.core.windows.net/dsms/issuercertificates?getissuersv3"
 ROOT_CERT = "/acms/AME_ROOT_CERTIFICATE.pem"
 CERTS_PATH = "/etc/sonic/credentials/"
 
@@ -22,6 +22,13 @@ def copy_cert(source, destination_dir):
         cert_file = os.path.split(source)[1]
         destination = os.path.join(destination_dir, cert_file)
         if os.path.isfile(destination):
+            # Check if Root cert has changed
+            existing_root_cert = open(destination, 'r').read()
+            new_root_cert = open(source, 'r').read()
+            if existing_root_cert == new_root_cert:
+                # No changes in root cert, nothing to copy
+                sonic_logger.log_info("CA_cert_downloader: copy_cert: Root cert has not changed")
+                return True
             # Delete existing file before copying latest one
             os.remove(destination)
             sonic_logger.log_info("CA_cert_downloader: copy_cert: Existing Root Cert file removed")
@@ -40,21 +47,10 @@ def extract_cert(response):
     if os.path.exists(ROOT_CERT):
         os.remove(ROOT_CERT)
     root_cert = open(ROOT_CERT, 'w')
-    cert_begin_marker = "-----BEGIN CERTIFICATE-----"
-    cert_end_marker = "-----END CERTIFICATE-----"
-
     root = response['RootsInfos'][0]
     for item in root['Intermediates']:
-        root_cert.write(cert_begin_marker+"\n")
-        body = re.sub("(.{64})", "\\1\n", item['Body'], 0, re.DOTALL)
-        root_cert.write(body+"\n")
-        root_cert.write(cert_end_marker+"\n")
-
-    root_cert.write(cert_begin_marker+"\n")
-    root_body = re.sub("(.{64})", "\\1\n", root['Body'], 0, re.DOTALL)
-    root_cert.write(root_body+"\n")
-    root_cert.write(cert_end_marker+"\n")   
-
+        root_cert.write(item['PEM']+"\n")
+    root_cert.write(root['PEM']+"\n")
     root_cert.close() 
 
 def get_cert(ca, url):
@@ -85,14 +81,15 @@ def get_cert(ca, url):
 
 
 def main():
-    if get_cert(CERTIFICATE_AUTHORITY, API_URL):
-        sonic_logger.log_info("CA_cert_downloader: main: Cert extraction completed")
-        if copy_cert(ROOT_CERT, CERTS_PATH):
-            sonic_logger.log_info("CA_cert_downloader: main: Root cert moved to "+CERTS_PATH)
+    while True:
+        if get_cert(CERTIFICATE_AUTHORITY, API_URL):
+            sonic_logger.log_info("CA_cert_downloader: main: Cert extraction completed")
+            if copy_cert(ROOT_CERT, CERTS_PATH) == False:
+                sonic_logger.log_error("CA_cert_downloader: main: Root cert move to "+CERTS_PATH+" failed!")
         else:
-            sonic_logger.log_error("CA_cert_downloader: main: Root cert move to "+CERTS_PATH+" failed!")
-    else:
-        sonic_logger.log_error("CA_cert_downloader: main: Cert extraction failed!")
+            sonic_logger.log_error("CA_cert_downloader: main: Cert extraction failed!")
+        # Poll dSMS every 12 hours
+        time.sleep(60 * 60 * 12)
 
 if __name__ == '__main__':
     sonic_logger.set_min_log_priority_info()

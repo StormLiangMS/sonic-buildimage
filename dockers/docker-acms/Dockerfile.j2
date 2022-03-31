@@ -88,10 +88,6 @@ COPY ["start.py", "cert_converter.py", "dSMS_config_modifier.py", "CA_cert_downl
 COPY ["supervisord.conf", "/etc/supervisor/"]
 COPY ["files/supervisor-proc-exit-listener", "/usr/bin"]
 COPY ["critical_processes", "/etc/supervisor"]
-
-# Download Root Certificate
-RUN python /usr/bin/CA_cert_downloader.py
-
 COPY ["etc/rsyslog.conf", "/etc/rsyslog.conf"]
 COPY ["etc/rsyslog.d/*", "/etc/rsyslog.d/"]
 RUN [ -f /etc/rsyslog.conf ] && sed -ri "s/%syslogtag%/$docker_container_name#%syslogtag%/;" /etc/rsyslog.conf
