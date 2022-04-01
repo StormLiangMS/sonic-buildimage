@@ -277,7 +277,7 @@ def parse_dpg(dpg, hname):
     aclintfs = None
     mgmtintfs = None
     for child in dpg:
-        """ 
+        """
             In Multi-NPU platforms the acl intfs are defined only for the host not for individual asic.
             There is just one aclintf node in the minigraph
             Get the aclintfs node first.
@@ -301,7 +301,7 @@ def parse_dpg(dpg, hname):
             if vni_element.text.isdigit():
                 vni = int(vni_element.text)
             else:
-                print >> sys.stderr, "VNI must be an integer (use default VNI %d instead)" % vni_default 
+                print >> sys.stderr, "VNI must be an integer (use default VNI %d instead)" % vni_default
 
         ipintfs = child.find(str(QName(ns, "IPInterfaces")))
         intfs = {}
@@ -333,7 +333,7 @@ def parse_dpg(dpg, hname):
         pc_intfs = []
         pcs = {}
         pc_members = {}
-        intfs_inpc = [] # List to hold all the LAG member interfaces 
+        intfs_inpc = [] # List to hold all the LAG member interfaces
         for pcintf in pcintfs.findall(str(QName(ns, "PortChannel"))):
             pcintfname = pcintf.find(str(QName(ns, "Name"))).text
             pcintfmbr = pcintf.find(str(QName(ns, "AttachTo"))).text
@@ -442,7 +442,7 @@ def parse_dpg(dpg, hname):
                         if panel_port not in intfs_inpc and panel_port not in acl_intfs:
                             acl_intfs.append(panel_port)
                     break
-            # if acl is classified as mirror (erpsan) or acl interface 
+            # if acl is classified as mirror (erpsan) or acl interface
             # are binded then do not classify as Control plane.
             # For multi-asic platforms it's possible there is no
             # interface are binded to everflow in host namespace.
@@ -709,12 +709,12 @@ def parse_deviceinfo(meta, hwsku):
                 port_speeds[port_alias_map.get(alias, alias)] = speed
     return port_speeds, port_descriptions
 
-# Function to check if IP address is present in the key. 
+# Function to check if IP address is present in the key.
 # If it is present, then the key would be a tuple.
 def is_ip_prefix_in_key(key):
     return (isinstance(key, tuple))
 
-# Special parsing for spine chassis frontend 
+# Special parsing for spine chassis frontend
 def parse_spine_chassis_fe(results, vni, lo_intfs, phyport_intfs, pc_intfs, pc_members, devices):
     chassis_vnet ='VnetFE'
     chassis_vxlan_tunnel = 'TunnelInt'
@@ -739,29 +739,29 @@ def parse_spine_chassis_fe(results, vni, lo_intfs, phyport_intfs, pc_intfs, pc_m
 
     # For each IP interface
     for intf in phyport_intfs:
-        # A IP interface may have multiple entries. 
+        # A IP interface may have multiple entries.
         # For example, "Ethernet0": {}", "Ethernet0|192.168.1.1": {}"
         # We only care about the one without IP information
         if is_ip_prefix_in_key(intf) == True:
-            continue 
-            
+            continue
+
         neighbor_router = results['DEVICE_NEIGHBOR'][intf]['name']
-            
-        # If the neighbor router is an external router 
+
+        # If the neighbor router is an external router
         if devices[neighbor_router]['type'] != chassis_backend_role:
             # Enslave the interface to a Vnet
             phyport_intfs[intf] = {'vnet_name': chassis_vnet}
-           
+
     # For each port channel IP interface
     for pc_intf in pc_intfs:
-        # A port channel IP interface may have multiple entries. 
+        # A port channel IP interface may have multiple entries.
         # For example, "Portchannel0": {}", "Portchannel0|192.168.1.1": {}"
         # We only care about the one without IP information
         if is_ip_prefix_in_key(pc_intf) == True:
-            continue 
+            continue
 
-        intf_name = None 
-        # Get a physical interface that belongs to this port channel         
+        intf_name = None
+        # Get a physical interface that belongs to this port channel
         for pc_member in pc_members:
             if pc_member[0] == pc_intf:
                 intf_name = pc_member[1]
@@ -774,10 +774,10 @@ def parse_spine_chassis_fe(results, vni, lo_intfs, phyport_intfs, pc_intfs, pc_m
         # Get the neighbor router of this port channel interface
         neighbor_router = results['DEVICE_NEIGHBOR'][intf_name]['name']
 
-        # If the neighbor router is an external router 
+        # If the neighbor router is an external router
         if devices[neighbor_router]['type'] != chassis_backend_role:
             # Enslave the port channel interface to a Vnet
-            pc_intfs[pc_intf] = {'vnet_name': chassis_vnet}        
+            pc_intfs[pc_intf] = {'vnet_name': chassis_vnet}
 
 ###############################################################################
 #
@@ -787,10 +787,10 @@ def parse_spine_chassis_fe(results, vni, lo_intfs, phyport_intfs, pc_intfs, pc_m
 
 def filter_acl_table_bindings(acls, neighbors, port_channels, sub_role):
     filter_acls = {}
-    
+
     # If the asic role is BackEnd no ACL Table (Ctrl/Data/Everflow) is binded.
     # This will be applicable in Multi-NPU Platforms.
-    
+
     if sub_role == BACKEND_ASIC_SUB_ROLE:
         return filter_acls
 
@@ -798,7 +798,7 @@ def filter_acl_table_bindings(acls, neighbors, port_channels, sub_role):
 
     # List of Backplane ports
     backplane_port_list = [v for k,v in port_alias_map.items() if v.startswith(backplane_prefix())]
-   
+
     # Get the front panel port channel.
     for port_channel_intf in port_channels:
         backend_port_channel = any(lag_member in backplane_port_list \
@@ -830,12 +830,12 @@ def filter_acl_table_bindings(acls, neighbors, port_channels, sub_role):
             if port in port_channels and port not in front_port_channel_intf:
                 continue
             front_panel_ports.append(port)
-        
+
         # Filters out inactive front-panel ports from the binding list for mirror
         # ACL tables. We define an "active" port as one that is a member of a
         # front pannel port channel or one that is connected to a neighboring device via front panel port.
         active_ports = [port for port in front_panel_ports if port in neighbors.keys() or port in front_port_channel_intf]
-        
+
         if not active_ports:
             print >> sys.stderr, 'Warning: mirror table {} in ACL_TABLE does not have any ports bound to it'.format(acl_table)
 
@@ -870,7 +870,7 @@ def parse_xml(filename, platform=None, port_config_file=None, asic_name=None):
     filename -- minigraph file name
     platform -- device platform
     port_config_file -- port config file name
-    asic_name -- asic name; to parse multi-asic device minigraph to 
+    asic_name -- asic name; to parse multi-asic device minigraph to
     generate asic specific configuration.
      """
     root = ET.parse(filename).getroot()
@@ -991,7 +991,7 @@ def parse_xml(filename, platform=None, port_config_file=None, asic_name=None):
 
     if is_storage_device:
         results['DEVICE_METADATA']['localhost']['storage_device'] = "true"
-    # for this hostname, if sub_role is defined, add sub_role in 
+    # for this hostname, if sub_role is defined, add sub_role in
     # device_metadata
     if sub_role is not None:
         current_device['sub_role'] = sub_role
@@ -1092,7 +1092,7 @@ def parse_xml(filename, platform=None, port_config_file=None, asic_name=None):
 
         # If AutoNegotiation is available in the minigraph, we override any value we may have received from port_config.ini
         autoneg = linkmetas.get(alias, {}).get('AutoNegotiation')
-        if autoneg:
+        if autoneg and "SN2700" not in results['DEVICE_METADATA']['localhost']['hwsku']:
             port['autoneg'] = '1' if autoneg.lower() == 'true' else '0'
 
     # set port description if parsed from deviceinfo
