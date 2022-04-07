@@ -1,0 +1,36 @@
+trigger: none
+pr:
+  branches:
+    include:
+      - internal-201911
+  paths:
+    exclude:
+      - .github
+resources:
+  repositories:
+  - repository: acs-buildimage
+    type: git
+    name: One/Networking-acs-buildimage
+    ref: internal
+
+name: $(TeamProject)_$(Build.DefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+
+stages:
+- stage: Build
+  pool: sonic-image-builder-1ES
+  variables:
+    CACHE_MODE: rcache
+    ${{ if eq(variables['Build.SourceBranchName'], '202012') }}:
+      VERSION_CONTROL_OPTIONS: 'SONIC_VERSION_CONTROL_COMPONENTS=deb,py2,py3,web,git,docker'
+  jobs:
+  - template: .azure-pipelines/azure-pipelines-build.yml@acs-buildimage
+    parameters:
+      buildOptions: 'USERNAME=admin SONIC_BUILD_JOBS=$(nproc) ${{ variables.VERSION_CONTROL_OPTIONS }}'
+      jobGroups:
+      - name: vs
+      - name: broadcom
+        variables:
+          swi_image: yes
+      - name: mellanox
+      preSteps:
+        - template: .pipelines/prepare_agent.yml@acs-buildimage
