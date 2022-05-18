@@ -6,13 +6,24 @@ bgp community-list standard UPSTREAM_PREFIX permit 8075:54000
 bgp community-list expanded LEAK_PLUS_UPSTREAM permit .*8075:10400.*8075:54000.*
 bgp community-list expanded LEAK_PLUS_UPSTREAM permit .*8075:54000.*8075:10400.*
 bgp community-list standard drop_community permit no-export
+bgp community-list standard SLB_PREFIX permit 8075:9300
 !
 bgp as-path access-list BBR_AS_PATH permit ^[0-9]+_{{ asn_number }}
+bgp as-path access-list SLB_ASN permit _65511$
+bgp as-path access-list SLB_ASN permit _64523$
 !
 ipv6 prefix-list DEFAULT_IPV6 permit ::/0
 ipv6 prefix-list IPV6_64_ONLY permit ::/0 ge 64 le 64
 !
 {% if constants.bgp.allow_list is defined and constants.bgp.allow_list.enabled is defined and constants.bgp.allow_list.enabled and constants.bgp.allow_list.drop_community is defined %}
+route-map ALLOW_LIST_DEPLOYMENT_ID_{{ neighbor_deployment_id }}_V6 permit 65532
+  match community SLB_PREFIX
+  match ipv6 address prefix-list IPV6_64_ONLY
+!
+route-map ALLOW_LIST_DEPLOYMENT_ID_{{ neighbor_deployment_id }}_V6 permit 65533
+  match as-path SLB_ASN
+  match ipv6 address prefix-list IPV6_64_ONLY
+!
 route-map ALLOW_LIST_DEPLOYMENT_ID_{{ neighbor_deployment_id }}_V6 permit 65534
   match as-path BBR_AS_PATH
 !
@@ -46,6 +57,11 @@ route-map FROM_TIER0_V6_DEPLOYMENT_ID_{{ neighbor_deployment_id }} permit 300
 route-map FROM_TIER0_V6_DEPLOYMENT_ID_{{ neighbor_deployment_id }} permit 400
   call ALLOW_LIST_DEPLOYMENT_ID_{{ neighbor_deployment_id }}_V6
   on-match next
+!
+route-map FROM_TIER0_V6_DEPLOYMENT_ID_{{ neighbor_deployment_id }} permit 450
+  match tag {{ constants.bgp.allow_list.prefix_match_tag }}
+  match community LEAK_COMMUNITY
+  set comm-list LEAK_COMMUNITY delete
 !
 route-map FROM_TIER0_V6_DEPLOYMENT_ID_{{ neighbor_deployment_id }} permit 500
   match community drop_community
