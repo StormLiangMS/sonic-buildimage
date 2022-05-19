@@ -24,6 +24,7 @@ constants:
       enabled: true
       default_action: "permit"   # or "deny"
       drop_community: 8075:8823  # value of the community to identify a prefix to drop. Make sense only with allow_list_default_action equal to 'permit'
+      prefix_match_tag: "1001"
       default_pl_rules:
         v4:
           - "deny 0.0.0.0/0 le 17"
