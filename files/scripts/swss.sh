@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DEPENDENT="radv dhcp_relay lossless-buffer-mitigation"
+DEPENDENT="radv dhcp_relay"
 MULTI_INST_DEPENDENT="teamd"
 
 function debug()
