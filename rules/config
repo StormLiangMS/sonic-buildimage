@@ -129,3 +129,6 @@ INCLUDE_ACMS = y
 # INCLUDE_VNET_MONITOR - build docker-vnet-monitor for vnetping utility on the device
 INCLUDE_VNET_MONITOR = n
 
+# reset default container registry from dockerhub to other
+DEFAULT_CONTAINER_REGISTRY ?=
+
