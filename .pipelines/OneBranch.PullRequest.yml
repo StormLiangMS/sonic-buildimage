@@ -15,6 +15,9 @@ resources:
 
 name: $(TeamProject)_$(Build.DefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
 
+variables:
+  - template: .azure-pipelines/template-variables.yml@acs-buildimage
+
 stages:
 - stage: Build
   pool: sonic-image-builder-1ES

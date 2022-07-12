@@ -26,6 +26,7 @@ variables:
 - group: SONIC-BUILD-VG-1
 - name: PUBLISH_BLOB_PREFIX
   value: pipelines/$(Build.DefinitionName)/$(Build.SourceBranchName)
+- template: .azure-pipelines/template-variables.yml@acs-buildimage
 
 stages:
 - stage: Build
@@ -71,7 +72,7 @@ stages:
         - script: |
             for image in `ls target | grep -E "\.(swi|bin|raw|deb)$"`; do
               version_image=$(echo $image | sed -E "s/(-dbg\.\w+|\.\w+)$/-$(SONIC_VERSION)\1/")
-              echo "$image,$version_image" >> target/sonic-installers 
+              echo "$image,$version_image" >> target/sonic-installers
               cp -f target/$image target/$version_image
             done
           displayName: "Copy installers"
