@@ -1,7 +1,8 @@
 !
 ! template: bgpd/templates/msft.dynamic/peer-group.conf.j2
 !
-! nothing is here
+{% from "bgpd/templates/msft.dynamic/router.j2" import dynamic_routing with context %}
+{{ dynamic_routing("peer-group") }}
 !
 ! end of template: bgpd/templates/msft.dynamic/peer-group.conf.j2
 !
