@@ -732,11 +732,14 @@ class BGPAllowListMgr(Manager):
         res = []
         prefix_mask_default = 32 if af == self.V4 else 128
         for prefix in allow_list:
-            prefix_mask = int(prefix.split("/")[1])
-            if prefix_mask == prefix_mask_default:
+            if 'le' in prefix or 'ge' in prefix:
                 res.append("permit %s" % prefix)
             else:
-                res.append("permit %s le %d" % (prefix, prefix_mask_default))
+                prefix_mask = int(prefix.split("/")[1])
+                if prefix_mask == prefix_mask_default:
+                    res.append("permit %s" % prefix)
+                else:
+                    res.append("permit %s le %d" % (prefix, prefix_mask_default))
         return res
 
     def __af_to_family(self, af):
