@@ -894,7 +894,7 @@ def test___set_handler_validate():
     })
 
 @patch.dict("sys.modules", swsscommon=swsscommon_module_mock)
-def test___find_peer_group_by_deployment_id():
+def test___find_peer_group():
     from bgpcfgd.managers_allow_list import BGPAllowListMgr
     cfg_mgr = MagicMock()
     cfg_mgr.update.return_value = None
@@ -984,7 +984,7 @@ def test___find_peer_group_by_deployment_id():
         'constants': global_constants,
     }
     mgr = BGPAllowListMgr(common_objs, "CONFIG_DB", "BGP_ALLOWED_PREFIXES")
-    values = mgr._BGPAllowListMgr__find_peer_group_by_deployment_id(0)
+    values = mgr._BGPAllowListMgr__find_peer_group(0)
     assert set(values) == {'PEER_V4_INT', 'PEER_V6_INT', 'PEER_V6', 'PEER_V4'}
 
 @patch.dict("sys.modules", swsscommon=swsscommon_module_mock)

@@ -14,8 +14,11 @@ class BGPAllowListMgr(Manager):
     ALLOW_ADDRESS_PL_NAME_TMPL = "ALLOW_ADDRESS_%d_%s"  # template for a name for the ALLOW_ADDRESS prefix-list ???
     EMPTY_COMMUNITY = "empty"
     PL_NAME_TMPL = "PL_ALLOW_LIST_DEPLOYMENT_ID_%d_COMMUNITY_%s_V%s"
+    PL_NAME_TMPL_WITH_NEIGH = "PL_ALLOW_LIST_DEPLOYMENT_ID_%d_NEIGHBOR_%s_COMMUNITY_%s_V%s"
     COMMUNITY_NAME_TMPL = "COMMUNITY_ALLOW_LIST_DEPLOYMENT_ID_%d_COMMUNITY_%s"
+    COMMUNITY_NAME_TMPL_WITH_NEIGH = "COMMUNITY_ALLOW_LIST_DEPLOYMENT_ID_%d_NEIGHBOR_%s_COMMUNITY_%s"
     RM_NAME_TMPL = "ALLOW_LIST_DEPLOYMENT_ID_%d_V%s"
+    RM_NAME_TMPL_WITH_NEIGH = "ALLOW_LIST_DEPLOYMENT_ID_%d_NEIGHBOR_%s_V%s"
     ROUTE_MAP_ENTRY_WITH_COMMUNITY_START = 10
     ROUTE_MAP_ENTRY_WITH_COMMUNITY_END = 29990
     ROUTE_MAP_ENTRY_WITHOUT_COMMUNITY_START = 30000
@@ -38,7 +41,7 @@ class BGPAllowListMgr(Manager):
             db,
             table,
         )
-        self.key_re = re.compile(r"^DEPLOYMENT_ID\|\d+\|\S+$|^DEPLOYMENT_ID\|\d+$")
+        self.key_re = re.compile(r"^DEPLOYMENT_ID\|\d+\|\S+$|^DEPLOYMENT_ID\|\d+$|^DEPLOYMENT_ID\|\d+\|\S+\|NEIGHBOR_TYPE\|\S+$|^DEPLOYMENT_ID\|\d+\|NEIGHBOR_TYPE\|\S+")
         self.enabled = self.__get_enabled()
         self.prefix_match_tag = self.__get_routemap_tag()
         self.__load_constant_lists()
@@ -55,7 +58,8 @@ class BGPAllowListMgr(Manager):
             return True
         if not self.__set_handler_validate(key, data):
             return True
-        key = key.replace("DEPLOYMENT_ID|", "")
+        keys = key.split('|NEIGHBOR_TYPE|', 1) if 'NEIGHBOR_TYPE' in key else [key, '']
+        key = keys[0].replace("DEPLOYMENT_ID|", "")
         deployment_id, community_value = key.split('|', 1) if '|' in key else (key, BGPAllowListMgr.EMPTY_COMMUNITY)
         deployment_id = int(deployment_id)
         prefixes_v4 = []
@@ -65,7 +69,7 @@ class BGPAllowListMgr(Manager):
         if "prefixes_v6" in data:
             prefixes_v6 = str(data['prefixes_v6']).split(",")
         default_action_community = self.__get_default_action_community(data)
-        self.__update_policy(deployment_id, community_value, prefixes_v4, prefixes_v6, default_action_community)
+        self.__update_policy(deployment_id, community_value, prefixes_v4, prefixes_v6, default_action_community, key[1])
         return True
 
     def __set_handler_validate(self, key, data):
@@ -113,10 +117,12 @@ class BGPAllowListMgr(Manager):
             return
         if not self.__del_handler_validate(key):
             return
-        key = key.replace('DEPLOYMENT_ID|', '')
+
+        keys = key.split('|NEIGHBOR_TYPE|', 1) if 'NEIGHBOR_TYPE' in key else [key, '']
+        key = keys[0].replace("DEPLOYMENT_ID|", "")
         deployment_id, community = key.split('|', 1) if '|' in key else (key, BGPAllowListMgr.EMPTY_COMMUNITY)
         deployment_id = int(deployment_id)
-        self.__remove_policy(deployment_id, community)
+        self.__remove_policy(deployment_id, community, keys[1])
 
     def __del_handler_validate(self, key):
         """
@@ -129,7 +135,7 @@ class BGPAllowListMgr(Manager):
             return False
         return True
 
-    def __update_policy(self, deployment_id, community_value, prefixes_v4, prefixes_v6, default_action):
+    def __update_policy(self, deployment_id, community_value, prefixes_v4, prefixes_v6, default_action, neighbor_type):
         """
         Update "allow list" policy with parameters
         :param deployment_id: deployment id which policy will be changed
@@ -139,12 +145,13 @@ class BGPAllowListMgr(Manager):
         :param default_action: the default action for the policy. should be either 'permit' or 'deny'
         """
         # update all related entries with the information
-        info = deployment_id, community_value, str(prefixes_v4), str(prefixes_v6)
+        info = deployment_id, community_value, str(prefixes_v4), str(prefixes_v6), neighbor_type
         msg = "BGPAllowListMgr::Updating 'Allow list' policy."
         msg += " deployment_id '%s'. community: '%s'"
         msg += " prefix_v4 '%s'. prefix_v6: '%s'"
+        msg += " neighbor_type %s"
         log_info(msg % info)
-        names = self.__generate_names(deployment_id, community_value)
+        names = self.__generate_names(deployment_id, community_value, neighbor_type)
         self.cfg_mgr.update()
         cmds = []
         cmds += self.__update_prefix_list(self.V4, names['pl_v4'], prefixes_v4)
@@ -156,14 +163,14 @@ class BGPAllowListMgr(Manager):
         cmds += self.__update_default_route_map_entry(names['rm_v6'], default_action)
         if cmds:
             self.cfg_mgr.push_list(cmds)
-            peer_groups = self.__find_peer_group_by_deployment_id(deployment_id)
+            peer_groups = self.__find_peer_group(deployment_id, neighbor_type)
             self.cfg_mgr.restart_peer_groups(peer_groups)
             log_debug("BGPAllowListMgr::__update_policy. The peers configuration scheduled for updates")
         else:
             log_debug("BGPAllowListMgr::__update_policy. Nothing to update")
         log_info("BGPAllowListMgr::Done")
 
-    def __remove_policy(self, deployment_id, community_value):
+    def __remove_policy(self, deployment_id, community_value, neighbor_type):
         """
         Remove "allow list" policy for given deployment_id and community_value
         :param deployment_id: deployment id which policy will be removed
@@ -177,7 +184,7 @@ class BGPAllowListMgr(Manager):
         log_info(msg % info)
 
         default_action = self.__get_default_action_community()
-        names = self.__generate_names(deployment_id, community_value)
+        names = self.__generate_names(deployment_id, community_value, neighbor_type)
         self.cfg_mgr.update()
         cmds = []
         cmds += self.__remove_allow_route_map_entry(self.V4, names['pl_v4'], names['community'], names['rm_v4'])
@@ -189,7 +196,7 @@ class BGPAllowListMgr(Manager):
         cmds += self.__update_default_route_map_entry(names['rm_v6'], default_action)
         if cmds:
             self.cfg_mgr.push_list(cmds)
-            peer_groups = self.__find_peer_group_by_deployment_id(deployment_id)
+            peer_groups = self.__find_peer_group(deployment_id, neighbor_type)
             self.cfg_mgr.restart_peer_groups(peer_groups)
             log_debug("BGPAllowListMgr::__remove_policy. 'Allow list' policy was scheduled for removal")
         else:
@@ -197,26 +204,42 @@ class BGPAllowListMgr(Manager):
         log_info('BGPAllowListMgr::Done')
 
     @staticmethod
-    def __generate_names(deployment_id, community_value):
+    def __generate_names(deployment_id, community_value, neighbor_type):
         """
         Generate prefix-list names for a given peer_ip and community value
         :param deployment_id: deployment_id for which we're going to filter prefixes
         :param community_value: community, which we want to use to filter prefixes
         :return: a dictionary with names
         """
-        if community_value == BGPAllowListMgr.EMPTY_COMMUNITY:
-            community_name = BGPAllowListMgr.EMPTY_COMMUNITY
+        if neighbor_type == '':
+            if community_value == BGPAllowListMgr.EMPTY_COMMUNITY:
+                community_name = BGPAllowListMgr.EMPTY_COMMUNITY
+            else:
+                community_name = BGPAllowListMgr.COMMUNITY_NAME_TMPL % (deployment_id, community_value)
+            names = {
+                "pl_v4": BGPAllowListMgr.PL_NAME_TMPL % (deployment_id, community_value, '4'),
+                "pl_v6": BGPAllowListMgr.PL_NAME_TMPL % (deployment_id, community_value, '6'),
+                "rm_v4": BGPAllowListMgr.RM_NAME_TMPL % (deployment_id, '4'),
+                "rm_v6": BGPAllowListMgr.RM_NAME_TMPL % (deployment_id, '6'),
+                "community": community_name,
+                'neigh_type': neighbor_type,
+            }
+            arguments = deployment_id, community_value, str(names)
+            log_debug("BGPAllowListMgr::__generate_names. deployment_id: %d, community: %s. names: %s" % arguments)
         else:
-            community_name = BGPAllowListMgr.COMMUNITY_NAME_TMPL % (deployment_id, community_value)
-        names = {
-            "pl_v4": BGPAllowListMgr.PL_NAME_TMPL % (deployment_id, community_value, '4'),
-            "pl_v6": BGPAllowListMgr.PL_NAME_TMPL % (deployment_id, community_value, '6'),
-            "rm_v4": BGPAllowListMgr.RM_NAME_TMPL % (deployment_id, '4'),
-            "rm_v6": BGPAllowListMgr.RM_NAME_TMPL % (deployment_id, '6'),
-            "community": community_name,
-        }
-        arguments = deployment_id, community_value, str(names)
-        log_debug("BGPAllowListMgr::__generate_names. deployment_id: %d, community: %s. names: %s" % arguments)
+            if community_value == BGPAllowListMgr.EMPTY_COMMUNITY:
+                community_name = BGPAllowListMgr.EMPTY_COMMUNITY
+            else:
+                community_name = BGPAllowListMgr.COMMUNITY_NAME_TMPL_WITH_NEIGH % (deployment_id, neighbor_type, community_value)
+            names = {
+                "pl_v4": BGPAllowListMgr.PL_NAME_TMPL_WITH_NEIGH % (deployment_id, neighbor_type, community_value, '4'),
+                "pl_v6": BGPAllowListMgr.PL_NAME_TMPL_WITH_NEIGH % (deployment_id, neighbor_type, community_value, '6'),
+                "rm_v4": BGPAllowListMgr.RM_NAME_TMPL_WITH_NEIGH % (deployment_id, neighbor_type, '4'),
+                "rm_v6": BGPAllowListMgr.RM_NAME_TMPL_WITH_NEIGH % (deployment_id, neighbor_type, '6'),
+                "community": community_name,
+            }
+            arguments = deployment_id, neighbor_type, community_value, str(names)
+            log_debug("BGPAllowListMgr::__generate_names. deployment_id: %d, neighbor_type: %s, community: %s. names: %s" % arguments)
         return names
 
     def __update_prefix_list(self, af, pl_name, allow_list):
@@ -630,7 +653,7 @@ class BGPAllowListMgr(Manager):
         return prefix_match_tag
 
     @staticmethod
-    def __get_peer_group_to_restart(deployment_id, pg_2_rm, rm_2_call):
+    def __get_peer_group_to_restart(deployment_id, pg_2_rm, rm_2_call, neighbor_type):
         """
         Get peer_groups which are assigned to deployment_id
         :deployment_id: deployment_id number
@@ -639,14 +662,17 @@ class BGPAllowListMgr(Manager):
         :rm_2_call: a dictionary: key - name of a route-map, value - name of a route-map call defined for the route-map
         """
         ret = set()
-        target_allow_list_prefix = 'ALLOW_LIST_DEPLOYMENT_ID_%d_V' % deployment_id
+        if neighbor_type == '':
+            target_allow_list_prefix = 'ALLOW_LIST_DEPLOYMENT_ID_%d_V' % deployment_id
+        else:
+            target_allow_list_prefix = 'ALLOW_LIST_DEPLOYMENT_ID_%d_NEIGHBOR_%s_V' % (deployment_id, neighbor_type)
         for peer_group, route_map in pg_2_rm.items():
             if route_map in rm_2_call:
                 if rm_2_call[route_map].startswith(target_allow_list_prefix):
                     ret.add(peer_group)
         return list(ret)
 
-    def __find_peer_group_by_deployment_id(self, deployment_id):
+    def __find_peer_group(self, deployment_id, neighbor_type):
         """
         Deduce peer-group names which are connected to devices with requested deployment_id
         :param deployment_id: deployment_id number
@@ -656,7 +682,7 @@ class BGPAllowListMgr(Manager):
         peer_groups = self.__extract_peer_group_names()
         pg_2_rm = self.__get_peer_group_to_route_map(peer_groups)
         rm_2_call = self.__get_route_map_calls(set(pg_2_rm.values()))
-        ret = self.__get_peer_group_to_restart(deployment_id, pg_2_rm, rm_2_call)
+        ret = self.__get_peer_group_to_restart(deployment_id, pg_2_rm, rm_2_call, neighbor_type)
         return list(ret)
 
     def __get_enabled(self):
