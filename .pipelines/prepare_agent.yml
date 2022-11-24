@@ -17,7 +17,7 @@ steps:
 
       if [ ! -d /nfs ];then
         sudo mkdir /nfs
-        sudo mount -t nfs -o sec=sys,vers=4.1 172.16.17.4:/nfs-int /nfs
+        sudo mount -t nfs -o sec=sys,vers=4.1 $(NFS_LOCATION) /nfs
       fi
       if [ ! -d /data ];then
         sudo mkdir /data
