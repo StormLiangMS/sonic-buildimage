@@ -27,7 +27,7 @@ steps:
           exit 1
         fi
         disk=$(realpath /dev/disk/azure/scsi1/lun0)
-        sudo sgdisk -n 0:0:0 -t 0:8300 -c 0:data $disk
+        sudo sgdisk -n 0:0:0 -t 0:8300 -c 0:data $disk || sudo sgdisk -n 0:0:0 -t 0:8300 -c 0:data ${disk}1
         sudo mkfs.ext4 -F ${disk}1 || true
         sudo mount ${disk}1 /data
 
