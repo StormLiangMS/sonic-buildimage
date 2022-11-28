@@ -174,9 +174,13 @@ stages:
             for f in $DOCKERS; do
               echo $f
               ./push_docker.sh $f $REGISTRY_SERVER_INTERNAL $PORT $REGISTRY_USERNAME "$REGISTRY_PASSWD" "$SONIC_VERSION $BRANCH"
+              if [ "$UPLOAD_HL_ACR" = "true" ]; then
+                ./push_docker.sh $f $HL_REGISTRY_SERVER $PORT $HL_REGISTRY_USERNAME "$HL_REGISTRY_PASSWD" "$SONIC_VERSION $BRANCH"
+              fi
             done
           env:
             REGISTRY_PASSWD: $(REGISTRY_PASSWD)
+            HL_REGISTRY_PASSWD: $(HL_REGISTRY_PASSWD)
             BUILD_NUMBER: $(Build.BuildId)
           displayName: "Publish to Docker Registry"
         - template: .pipelines/post-build-steps.yml@acs-buildimage
