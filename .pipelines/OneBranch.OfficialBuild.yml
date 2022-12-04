@@ -7,6 +7,7 @@ schedules:
     - internal-202012
     - internal-201911
     - internal-201811
+    - internal-202211
   always: false
 trigger: none
 pr: none
