@@ -224,6 +224,11 @@ stages:
             make $OPTIONS ENABLE_SYNCD_RPC=y target/docker-syncd-brcm-rpc.gz
             echo "==== Finished building syncd-rpc docker"
 
+            echo "==== Building brcm saiserverv2 docker and sai python header"
+            make $OPTIONS SAITHRIFT_V2=y INSTALL_DEBUG_TOOLS=y target/docker-saiserverv2-brcm.gz
+            cp target/debs/bullseye/python-saithriftv2_0.9.4_amd64.deb target/python-saithriftv2_0.9.4_amd64.deb
+            echo "==== Finished building brcm saiserverv2 docker and sai python header"
+
             echo "==== Building one debug image"
             make $OPTIONS INSTALL_DEBUG_TOOLS=y target/sonic-broadcom.bin
             mv target/sonic-broadcom.bin target/sonic-broadcom-dbg.bin
