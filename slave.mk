@@ -212,6 +212,14 @@ ifeq ($(SONIC_INCLUDE_MACSEC),y)
 INCLUDE_MACSEC = y
 endif
 
+ifneq ($(SONIC_INCLUDE_TEAMD),)
+override INCLUDE_TEAMD = $(SONIC_INCLUDE_TEAMD)
+endif
+
+ifneq ($(SONIC_INCLUDE_ROUTER_ADVERTISER),)
+override INCLUDE_ROUTER_ADVERTISER = $(SONIC_INCLUDE_ROUTER_ADVERTISER)
+endif
+
 ifeq ($(ENABLE_AUTO_TECH_SUPPORT),y)
 ENABLE_AUTO_TECH_SUPPORT = y
 endif
@@ -417,6 +425,8 @@ $(info "INCLUDE_KUBERNETES"              : "$(INCLUDE_KUBERNETES)")
 $(info "INCLUDE_KUBERNETES_MASTER"       : "$(INCLUDE_KUBERNETES_MASTER)")
 $(info "INCLUDE_MACSEC"                  : "$(INCLUDE_MACSEC)")
 $(info "INCLUDE_MUX"                     : "$(INCLUDE_MUX)")
+$(info "INCLUDE_TEAMD"                   : "$(INCLUDE_TEAMD)")
+$(info "INCLUDE_ROUTER_ADVERTISER"       : "$(INCLUDE_ROUTER_ADVERTISER)")
 $(info "INCLUDE_BOOTCHART                : "$(INCLUDE_BOOTCHART)")
 $(info "ENABLE_BOOTCHART                 : "$(ENABLE_BOOTCHART)")
 $(info "ENABLE_FIPS_FEATURE"             : "$(ENABLE_FIPS_FEATURE)")
@@ -620,7 +630,7 @@ $(addprefix $(FILES_PATH)/, $(SONIC_MAKE_FILES)) : $(FILES_PATH)/% : .platform $
 		# Remove target to force rebuild
 		rm -f $(addprefix $(FILES_PATH)/, $*)
 		# Apply series of patches if exist
-		if [ -f $($*_SRC_PATH).patch/series ]; then pushd $($*_SRC_PATH) && QUILT_PATCHES=../$(notdir $($*_SRC_PATH)).patch quilt push -a; popd; fi
+		if [ -f $($*_SRC_PATH).patch/series ]; then pushd $($*_SRC_PATH) && quilt applied || QUILT_PATCHES=../$(notdir $($*_SRC_PATH)).patch quilt push -a; popd; fi
 		# Build project and take package
 		make DEST=$(shell pwd)/$(FILES_PATH) -C $($*_SRC_PATH) $(shell pwd)/$(FILES_PATH)/$* $(LOG)
 		# Clean up
@@ -1223,6 +1233,8 @@ $(addprefix $(TARGET_PATH)/, $(SONIC_INSTALLERS)) : $(TARGET_PATH)/% : \
 	export enable_organization_extensions="$(ENABLE_ORGANIZATION_EXTENSIONS)"
 	export enable_dhcp_graph_service="$(ENABLE_DHCP_GRAPH_SERVICE)"
 	export enable_ztp="$(ENABLE_ZTP)"
+	export include_teamd="$(INCLUDE_TEAMD)"
+	export include_router_advertiser="$(INCLUDE_ROUTER_ADVERTISER)"
 	export include_system_telemetry="$(INCLUDE_SYSTEM_TELEMETRY)"
 	export include_system_gnmi="$(INCLUDE_SYSTEM_GNMI)"
 	export include_restapi="$(INCLUDE_RESTAPI)"
