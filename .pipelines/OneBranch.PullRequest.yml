@@ -57,7 +57,7 @@ stages:
     - name: testbed_file
       value: vtestbed.yaml
     - name: BUILD_BRANCH
-      value: internal
+      value: internal-202411
 
   # For every test job:
   # continueOnError: false means it's a required test job and will block merge if it fails
