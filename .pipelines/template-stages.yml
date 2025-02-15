@@ -133,7 +133,7 @@ stages:
             displayName: Build SONiC image
           - script: |
               echo $(build_result)
-              [[ "$(build_result)" == '' ]] || exit 1
+              [[ "$(build_result)" == '' ]] && echo "ALL SUCCEEDED" || exit 1
             continueOnError: true
             displayName: Check Result
           - template: /.pipelines/template-poststeps.yml@self

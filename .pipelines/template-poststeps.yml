@@ -106,8 +106,8 @@ steps:
             for installer in `cat $latest_path/target/sonic-installers`; do
               image=$(echo $installer | cut -d, -f1)
               version_image=$(echo $installer | cut -d, -f2)
-              ln -sf $latest_path/target/$version_image $installers_path/$image
-              ln -sf $latest_path/target/$version_image $link_path/$version_image
+              ln -sf $latest_path/target/$image $installers_path/$image
+              ln -sf $latest_path/target/$image $link_path/$version_image
               ln -sf latest/target/$image $link_path/$image
               ln -sf prev/target/$image $link_path/$image.PREV.1
             done
