@@ -36,8 +36,6 @@ parameters:
   - cisco-8000
   - cisco-8000-smartswitch
 variables:
-  - name: DOCKER_BUILD_TIMEOUT
-    value: 5400
   - group: SONiC-sonicbld
   - group: SONIC-BUILD-VG-1
 
