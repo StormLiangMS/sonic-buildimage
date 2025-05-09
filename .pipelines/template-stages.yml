@@ -46,6 +46,7 @@ stages:
           displayName: set githubPR
         - script: |
             set -ex
+            set -o pipefail
 
             OPTIONS="${{ parameters.OPTIONS }} ${{ parameters.CACHE }} SONIC_DPKG_CACHE_SOURCE=/nfs/dpkg_cache/vs INCLUDE_KUBERNETES_MASTER=n BUILD_MULTIASIC_KVM=y"
             make $OPTIONS target/docker-sonic-vs.gz target/sonic-vs.img.gz target/docker-ptf.gz 2>&1 | tee target/build.log
@@ -85,6 +86,7 @@ stages:
               OPTIONS: ${{ parameters.OPTIONS }}
           - script: |
               set -ex
+              set -o pipefail
 
               failures=''
               OPTIONS="${{ parameters.OPTIONS }} ${{ parameters.CACHE }} SONIC_DPKG_CACHE_SOURCE=/nfs/dpkg_cache/broadcom"
@@ -157,11 +159,12 @@ stages:
               OPTIONS: ${{ parameters.OPTIONS }}
           - script: |
               set -ex
+              set -o pipefail
               OPTIONS="${{ parameters.OPTIONS }} ${{ parameters.CACHE }} SONIC_DPKG_CACHE_SOURCE=/nfs/dpkg_cache/mellanox"
 
               make $OPTIONS INCLUDE_VNET_MONITOR=y target/sonic-mellanox.bin 2>&1 | tee target/build.log
               make $OPTIONS ENABLE_SYNCD_RPC=y target/docker-syncd-mlnx-rpc.gz 2>&1 | tee target/buildrpc.log
-              cp target/debs/bookworm/python-saithrift*.deb target/ || true
+              cp target/debs/bookworm/python-saithrift*.deb target/
             displayName: Build SONiC image
           - template: /.pipelines/template-poststeps.yml@self
             parameters:
@@ -186,6 +189,7 @@ stages:
               OPTIONS: ${{ parameters.OPTIONS }}
           - script: |
               set -ex
+              set -o pipefail
 
               OPTIONS="${{ parameters.OPTIONS }} ${{ parameters.CACHE }} SONIC_DPKG_CACHE_SOURCE=/nfs/dpkg_cache/marvell-armhf INCLUDE_DHCP_SERVER=y"
               make $OPTIONS target/sonic-marvell-armhf.bin 2>&1 | tee target/build.log
