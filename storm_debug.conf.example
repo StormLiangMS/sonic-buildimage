@@ -1,0 +1,33 @@
+# Storm Debug Configuration File
+# This file controls the throttling rates for storm debug logs in FRR BGP
+# 
+# Format: key=value
+# Lines starting with # are comments
+#
+# Configuration is automatically reloaded every 5 seconds if the file is modified
+# 
+# Available settings:
+#
+# throttle_100: Throttle rate for frequent events (default: 100)
+#               Used for: optimized path processing, completion phase
+#               Lower values = more frequent logging
+#
+# throttle_500: Throttle rate for normal events (default: 500) 
+#               Used for: route processing, zebra operations, peer announcements
+#               Lower values = more frequent logging
+#
+# Examples:
+# throttle_100=50    # Log every 50th frequent event
+# throttle_500=1000  # Log every 1000th normal event
+
+# Default configuration
+throttle_100=100
+throttle_500=500
+
+# For debugging issues, you might want to increase logging frequency:
+# throttle_100=10
+# throttle_500=50
+
+# For production with high traffic, you might want to reduce logging:
+# throttle_100=1000
+# throttle_500=5000
