@@ -14,7 +14,7 @@ variables:
 
 stages:
 - stage: Build
-  pool: sonicso1ES-amd64-a
+  pool: sonicso1ES-amd64
   variables:
   - group: Container-Registry
   - name: CACHE_MODE
